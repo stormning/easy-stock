@@ -1,0 +1,78 @@
+@import "normalize.scss";
+
+html {
+  min-height: 100%;
+  background: #f4f4f4;
+}
+
+* {
+  box-sizing: border-box !important;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #282828;
+}
+
+a, a:active, a:focus {
+  text-decoration: none;
+  outline: none;
+  //font-size: 28px;
+  color: #282828;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px 0 rgba(169, 180, 193, 0.25);
+  padding: 20px;
+}
+
+.el-col {
+  border-radius: 4px;
+}
+
+.bg0 {
+  background: #f9fafc;
+  border: 1px solid #d3dce6;
+}
+
+.bg1 {
+  background: #99a9bf;
+  border: 1px solid #d3dce6;
+}
+
+.bg2 {
+  border: 1px solid #d3dce6;
+}
+
+.bg3 {
+  border: 1px solid #d3dce6;
+}
+
+.mb5 {
+  margin-bottom: 5px;
+}
+
+.mb10 {
+  margin-bottom: 10px;
+}
+
+.mb15 {
+  margin-bottom: 15px;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
+.text-right{
+  text-align: right;
+}
