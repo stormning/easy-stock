@@ -10,15 +10,15 @@
           label="名称">
       </el-table-column>
       <el-table-column
-          prop="buyPrice"
+          prop="firstBuy.price"
           label="买入价">
       </el-table-column>
       <el-table-column
-          prop="name"
+          prop="nextBuy.price"
           label="下次加仓">
       </el-table-column>
       <el-table-column
-          prop="address"
+          prop="earn"
           label="盈亏">
       </el-table-column>
     </el-table>
@@ -34,7 +34,15 @@ export default {
         stock: {
           name: '京泉华'
         },
-        buyPrice: '20.12'
+        firstBuy: {
+          price: '20.12',
+          amount: 1000,
+        },
+        nextBuy: {
+          price: '15.12',
+          amount: 2000
+        },
+        earn: '5.5%'
       }]
     }
   },

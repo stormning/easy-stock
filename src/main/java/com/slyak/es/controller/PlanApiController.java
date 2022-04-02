@@ -1,21 +1,35 @@
 package com.slyak.es.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.slyak.es.domain.Plan;
+import com.slyak.es.service.PlanService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/plan")
 public class PlanApiController extends BaseController {
 
-    @PostMapping("/create")
-    public Result create() {
+    private PlanService planService;
+
+    @Autowired
+    public PlanApiController(PlanService planService) {
+        this.planService = planService;
+    }
+
+
+    @PostMapping("/save")
+    public Result save(@ModelAttribute Plan plan) {
         return ok();
     }
 
     @GetMapping("/list")
     public Result list() {
         return ok();
+    }
+
+    @ModelAttribute
+    public Plan getPlan(Long id) {
+        Plan plan = planService.getById(id);
+        return plan == null ? new Plan() : plan;
     }
 }
