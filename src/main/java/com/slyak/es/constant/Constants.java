@@ -14,6 +14,9 @@ public class Constants {
 
     //券商佣金（每个人不同）
 
+
+    private static final BigDecimal MIN_FEE = BigDecimal.valueOf(5);
+
     /**
      * 计算交易金额
      *
@@ -22,14 +25,21 @@ public class Constants {
      * @param type       交易类型
      * @return
      */
-    private static BigDecimal trade(BigDecimal totalPrice, BigDecimal commission, TradeType type) {
+    public static BigDecimal trade(BigDecimal totalPrice, BigDecimal commission, TradeType type) {
         BigDecimal finalPrice;
+        BigDecimal com = minFee(totalPrice.multiply(commission));
         if (type == TradeType.BUY) {
-            finalPrice = BigDecimal.ZERO.subtract(totalPrice.add(totalPrice.multiply(TRADE_TAX)));
+            BigDecimal tradeFee = com.add(totalPrice.multiply(TRADE_TAX));
+            finalPrice = BigDecimal.ZERO.subtract(totalPrice.add(tradeFee));
         } else {
-            finalPrice = totalPrice.subtract(totalPrice.multiply(TAX_YIN_HUA.add(TRADE_TAX)));
+            BigDecimal tradeFee = com.add(totalPrice.multiply(TAX_YIN_HUA.add(TRADE_TAX)));
+            finalPrice = totalPrice.subtract(tradeFee);
         }
         return finalPrice.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal minFee(BigDecimal fee) {
+        return fee.compareTo(MIN_FEE) >= 0 ? fee : MIN_FEE;
     }
 
     public static void main(String[] args) {
