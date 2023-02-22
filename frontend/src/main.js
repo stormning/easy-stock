@@ -6,13 +6,11 @@ import '@/assets/css/core.scss'
 import App from './App.vue'
 import 'babel-polyfill'
 import Es6Promise from 'es6-promise'
-import WebStorageCache from 'web-storage-cache'
-// import '@/util/flexible.js'
 import moment from 'moment'
-import el from "element-ui/src/locale/lang/el";
 import router from "@/util/router";
 import axios from "@/util/axios"
 Es6Promise.polyfill()
+
 Vue.use(ElementUI)
 Vue.use(VueRouter)
 Vue.config.productionTip = false

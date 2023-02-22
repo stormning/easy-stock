@@ -2,12 +2,15 @@ package com.slyak.es.service.impl;
 
 import com.slyak.es.constant.Constants;
 import com.slyak.es.domain.Plan;
+import com.slyak.es.domain.Stock;
 import com.slyak.es.domain.Trade;
 import com.slyak.es.domain.TradeType;
 import com.slyak.es.repo.PlanRepo;
 import com.slyak.es.repo.TradeRepo;
 import com.slyak.es.service.PlanService;
+import com.slyak.es.service.StockService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,13 +23,32 @@ public class PlanServiceImpl implements PlanService {
 
     private TradeRepo tradeRepo;
 
+    private StockService stockService;
+
     public PlanServiceImpl(PlanRepo planRepo) {
         this.planRepo = planRepo;
     }
 
     @Override
     public Plan getById(Long id) {
-        return planRepo.getById(id);
+        return planRepo.getReferenceById(id);
+    }
+
+    @Override
+    public Plan getByStockCode(String stockCode) {
+        return planRepo.findByStockCode(stockCode);
+    }
+
+    @Override
+    public Plan init(String stockCode) {
+        Stock stock = stockService.getStock(stockCode);
+        Assert.notNull(stock, "无效的股票代码");
+        Plan plan = getByStockCode(stockCode);
+        Assert.isNull(plan, "持仓计划已存在");
+        plan = new Plan();
+        plan.setStockCode(stockCode);
+        planRepo.save(plan);
+        return plan;
     }
 
     public List<Trade> getNextTrades(Long planId) {
@@ -113,10 +135,10 @@ public class PlanServiceImpl implements PlanService {
         PlanServiceImpl planService = new PlanServiceImpl(null);
         Plan plan = new Plan();
         plan.setCapital(BigDecimal.valueOf(1000));
-        plan.setFirstPrice(BigDecimal.valueOf(4.99));
-        plan.setWorstPrice(BigDecimal.valueOf(2.5));
-        plan.setLosePercent(BigDecimal.valueOf(10));
-        plan.setWinPercent(BigDecimal.valueOf(5));
+        plan.setFirstPrice(BigDecimal.valueOf(9.483));
+        plan.setWorstPrice(BigDecimal.valueOf(4.741));
+        plan.setLosePercent(BigDecimal.valueOf(20));
+        plan.setWinPercent(BigDecimal.valueOf(20));
         Trade firstTrade = planService.getFirstTrade(plan, BigDecimal.valueOf(0.00015));
         System.out.println(firstTrade);
     }

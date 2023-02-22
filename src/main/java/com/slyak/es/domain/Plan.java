@@ -15,7 +15,7 @@ import java.math.RoundingMode;
 public class Plan extends AbstractAuditable<User, Long> {
 
     //股票编号
-    private String stock;
+    private String stockCode;
 
     //第一次买入价格
     private BigDecimal firstPrice;

@@ -2,16 +2,16 @@ import axios from 'axios'
 import router from "@/util/router";
 import qs from 'qs'
 
-const origin = location.origin
-const apiUrl = origin.indexOf('localhost') > 0 /*|| location.port === '8080'*/? `http://${location.hostname}:8080` : origin
+// const origin = location.origin
+// const apiUrl = origin.indexOf('localhost') > 0 /*|| location.port === '8080'*/? `http://${location.hostname}:8080` : origin
 
 axios.defaults.withCredentials = true
 
 axios.interceptors.request.use(
     config => {
-        if (config.url.indexOf("http") < 0) {
+        /*if (config.url.indexOf("http") < 0) {
             config.url = apiUrl + config.url
-        }
+        }*/
         config.crossDomain = true
         if (!config.hasOwnProperty("autoToast")) {
             config.autoToast = true

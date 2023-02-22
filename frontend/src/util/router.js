@@ -13,11 +13,19 @@ const router = new VueRouter({
     routes: [
         {
             path: '/',
-            redirect: '/index'
+            redirect: '/stocks'
         },
         {
-            path: '/index',
-            component: () => import('../pages/index.vue'),
+            path: '/stocks',
+            component: () => import('../pages/stocks.vue')
+        },
+        {
+            path: '/stock',
+            component: () => import('../pages/stock.vue'),
+        },
+        {
+            path: '/plates',
+            component: () => import('../pages/plates.vue'),
         }
     ]
 });
@@ -31,7 +39,7 @@ router.beforeEach((to, from, next) => {
             next()
         }
     } else {
-        if (to.path === '/login' || to.path === '/logout'){
+        if (to.path === '/login' || to.path === '/logout') {
             next()
         } else {
             /*sec.initUserInfo(function (){

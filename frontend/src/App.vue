@@ -1,11 +1,17 @@
 <template>
   <div id="app" class="app">
-    <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
-      <el-menu-item index="1">仓位计划</el-menu-item>
+    <el-menu default-active="stocks" :router="true" mode="horizontal">
+      <el-menu-item index="2-1">我的看板</el-menu-item>
+      <el-menu-item index="stocks">个股计划</el-menu-item>
+      <el-menu-item index="plates">策略管理</el-menu-item>
+      <el-menu-item index="todos">今日代办</el-menu-item>
+      <el-menu-item index="plates">板块机会</el-menu-item>
     </el-menu>
-    <div style="margin-top: 10px">
-      <router-view v-if="isRouterAlive"></router-view>
-    </div>
+    <el-container>
+      <el-main>
+        <router-view v-if="isRouterAlive"></router-view>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
@@ -34,6 +40,10 @@ export default {
     },
     handleSelect(key, keyPath) {
       console.log(key, keyPath);
+    },
+    jumpTo(url) {
+      console.log(this)
+      this.router.push({path: url})
     }
   },
   mounted() {

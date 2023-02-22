@@ -1,61 +1,152 @@
 @import "normalize.scss";
 
-html {
-  min-height: 100%;
-  background: #f4f4f4;
+$blue: #409EFF;
+$green: #67C23A;
+$orange: #E6A23C;
+$red: #F56C6C;
+$gray: #909399;
+$black: #000000;
+$white: #FFFFFF;
+
+
+$text-main: #303133;
+$border-main: #DCDFE6;
+$text-normal: #606266;
+$border-normal: #E4E7ED;
+$text-minor: #909399;
+$border-minor: #EBEEF5;
+$text-holder: #C0C4CC;
+$border-holder: #F2F6FC;
+
+.text-main {
+  color: $text-main;
 }
 
+.text-normal {
+  color: $text-normal;
+}
+
+.text-minor {
+  color: $text-minor;
+}
+
+.text-holder {
+  color: $text-holder;
+}
+
+.line{
+  height: 1px;
+  background-color: #e0e6ed;
+  margin: 35px -24px;
+}
+
+.el-footer, .el-header {
+  //background-color: #b3c0d1;
+  color: #333;
+  line-height: 60px;
+}
+
+//
+//html {
+//  min-height: 100%;
+//  background: #f4f4f4;
+//}
+//
 * {
-  box-sizing: border-box !important;
+  box-sizing: border-box;
+  outline: none;
+  //border: .5px solid #333;
 }
 
+.no-border * {
+  border: none;
+}
+
+.no-padding {
+  padding: 0 !important;
+}
+
+//
 body {
   font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #282828;
+  color: $text-main;
+  -webkit-font-smoothing: antialiased;
+  background-color: #fff;
 }
 
-a, a:active, a:focus {
-  text-decoration: none;
-  outline: none;
-  //font-size: 28px;
-  color: #282828;
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
 }
 
-html, body {
-  padding: 0;
-  margin: 0;
+.flex-container {
+  display: flex;
+  align-items: center;
 }
 
-.panel {
-  background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 1px 2px 0 rgba(169, 180, 193, 0.25);
-  padding: 20px;
+.flex {
+  display: flex;
 }
 
-.el-col {
-  border-radius: 4px;
+.flex-auto {
+  display: flex;
+  flex: 1;
+  flex-basis: 0;
+  justify-content: end;
 }
 
-.bg0 {
-  background: #f9fafc;
-  border: 1px solid #d3dce6;
+.flex-end {
+  align-self: flex-end;
 }
 
-.bg1 {
-  background: #99a9bf;
-  border: 1px solid #d3dce6;
+.color-blue {
+  color: $blue;
 }
 
-.bg2 {
-  border: 1px solid #d3dce6;
-}
-
-.bg3 {
-  border: 1px solid #d3dce6;
-}
+//
+//a, a:active, a:focus {
+//  text-decoration: none;
+//  outline: none;
+//  //font-size: 28px;
+//  color: #282828;
+//}
+//
+//html, body {
+//  padding: 0;
+//  margin: 0;
+//}
+//
+//.panel {
+//  background: #fff;
+//  border-radius: 2px;
+//  box-shadow: 0 1px 2px 0 rgba(169, 180, 193, 0.25);
+//  padding: 20px;
+//}
+//
+//.el-col {
+//  border-radius: 4px;
+//}
+//
+//.bg0 {
+//  background: #f9fafc;
+//  border: 1px solid #d3dce6;
+//}
+//
+//.bg1 {
+//  background: #99a9bf;
+//  border: 1px solid #d3dce6;
+//}
+//
+//.bg2 {
+//  border: 1px solid #d3dce6;
+//}
+//
+//.bg3 {
+//  border: 1px solid #d3dce6;
+//}
+//
 
 .mb5 {
   margin-bottom: 5px;
@@ -73,6 +164,10 @@ html, body {
   margin-bottom: 20px;
 }
 
-.text-right{
+.mr20 {
+  margin-right: 20px;
+}
+
+.text-right {
   text-align: right;
 }

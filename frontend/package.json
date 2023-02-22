@@ -13,12 +13,8 @@
     "element-ui": "^2.13.2",
     "es6-promise": "^4.2.8",
     "moment": "^2.29.0",
-    "px2rem-loader": "^0.1.9",
     "qs": "^6.9.4",
-    "vue": "^2.6.11",
-    "vue-advanced-cropper": "^0.17.3",
-    "vue-quill-editor": "^3.0.6",
-    "vue-sticky": "^3.3.4"
+    "vue": "^2.6.11"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
