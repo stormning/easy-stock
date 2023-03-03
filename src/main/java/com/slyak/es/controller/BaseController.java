@@ -1,7 +1,11 @@
 package com.slyak.es.controller;
 
 import com.google.common.collect.Maps;
+import com.slyak.es.hibernate.assembler.EntityAssemblers;
+import com.slyak.es.util.ObjectUtils;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -16,7 +20,16 @@ public class BaseController {
         private String msg;
         private Object data;
 
-        public Map<String, Object> toMap(){
+        public Result setData(Object data) {
+            if (data != null) {
+                EntityAssemblers eas = EntityAssemblers.newInstance();
+                eas.assemble(data);
+            }
+            this.data = data;
+            return this;
+        }
+
+        public Map<String, Object> toMap() {
             Map<String, Object> ret = Maps.newHashMap();
             ret.put("success", success);
             ret.put("msg", msg);

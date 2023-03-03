@@ -8,14 +8,14 @@ import 'babel-polyfill'
 import Es6Promise from 'es6-promise'
 import moment from 'moment'
 import router from "@/util/router";
-import axios from "@/util/axios"
+import init from "@/util/axios"
 Es6Promise.polyfill()
 
 Vue.use(ElementUI)
 Vue.use(VueRouter)
 Vue.config.productionTip = false
 Vue.prototype.$moment = moment;
-Vue.prototype.$http = axios
+
 
 const props = {}
 
@@ -26,6 +26,8 @@ const vm = new Vue({
         user: {}
     }
 });
+
+Vue.prototype.$http = init(vm)
 
 
 Vue.mixin({

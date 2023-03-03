@@ -16,6 +16,10 @@ axios.interceptors.request.use(
         if (!config.hasOwnProperty("autoToast")) {
             config.autoToast = true
         }
+        const singleParam = config.data && Object.keys(config.data).length === 1;
+        if (singleParam) {
+            config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        }
         const contentType = config.headers['Content-Type']
         if (contentType === 'application/x-www-form-urlencoded') {
             config.data = qs.stringify(config.data)
@@ -31,49 +35,56 @@ axios.interceptors.request.use(
     }
 )
 
-axios.interceptors.response.use(
-    response => {
-        console.log(response)
-        if (!response.config.hasOwnProperty("indicator") || response.config.indicator) {
-            // Indicator.close()
-        }
-        const code = response.status
-        const hasResultWrapper = response.data.hasOwnProperty("success");
-        if ((code >= 200 && code < 300) || code === 304) {
-            if (hasResultWrapper && !response.data.success && response.config.autoToast) {
-                // Toast(response.data.msg)
+const init = function (vm) {
+    axios.interceptors.response.use(
+        response => {
+            console.log(response)
+            if (!response.config.hasOwnProperty("indicator") || response.config.indicator) {
+                // Indicator.close()
             }
-            return Promise.resolve(response.data)
-        } else {
-            return Promise.reject(response)
-        }
-    },
-    error => {
-        // Indicator.close()
-        if (error.response) {
-            switch (error.response.status) {
-                case 401:
-                    // 返回401 清除token信息并跳转到登陆页面
-                    router.push({
-                        path: '/login'
-                    })
-                    break
-                case 404:
-                    // Toast("网络请求不存在")
-                    break
-                default:
-                    // Toast(error.response.data.message)
-            }
-        } else {
-            // 请求超时或者网络有问题
-            if (error.message.includes('timeout')) {
-                // Toast('请求超时')
+            const code = response.status
+            const hasResultWrapper = response.data.hasOwnProperty("success");
+            if ((code >= 200 && code < 300) || code === 304) {
+                if (hasResultWrapper && !response.data.success && response.config.autoToast) {
+                    vm.$message({
+                        message: response.data.msg,
+                        type: 'error'
+                    });
+                }
+                return Promise.resolve(response.data)
             } else {
-                // Toast('网络异常')
+                return Promise.reject(response)
             }
+        },
+        error => {
+            // Indicator.close()
+            if (error.response) {
+                switch (error.response.status) {
+                    case 401:
+                        // 返回401 清除token信息并跳转到登陆页面
+                        router.push({
+                            path: '/login'
+                        })
+                        break
+                    case 404:
+                        // Toast("网络请求不存在")
+                        break
+                    default:
+                    // Toast(error.response.data.message)
+                }
+            } else {
+                // 请求超时或者网络有问题
+                if (error.message.includes('timeout')) {
+                    // Toast('请求超时')
+                } else {
+                    // Toast('网络异常')
+                }
+            }
+            return Promise.reject(error)
         }
-        return Promise.reject(error)
-    }
-)
+    )
 
-export default axios
+    return axios
+}
+
+export default init

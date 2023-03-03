@@ -6,6 +6,7 @@ import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Data
 @Accessors(chain = true)
@@ -19,4 +20,7 @@ public class Stock extends AbstractPersistable<Long> {
     private String pinyin;
     private OrgType orgType;
     private StockType type;
+
+    @Transient
+    private StockInfo info;
 }

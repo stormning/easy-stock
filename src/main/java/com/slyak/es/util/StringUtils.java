@@ -1,5 +1,11 @@
 package com.slyak.es.util;
 
+import com.google.common.collect.Lists;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,15 +29,30 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return sb.toString();
     }
 
-    public static String find(String input, Pattern pattern, int groupIndex){
+    public static String find(String input, Pattern pattern, int groupIndex) {
         Matcher matcher = pattern.matcher(input);
-        if (matcher.find()){
+        if (matcher.find()) {
             int cnt = matcher.groupCount();
             if (cnt <= groupIndex) {
                 return matcher.group(groupIndex);
             }
         }
         return null;
+    }
+
+    public static List<String> findGroups(String input, Pattern pattern) {
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.find()) {
+            int cnt = matcher.groupCount();
+            if (cnt > 0) {
+                List<@Nullable String> finds = Lists.newArrayList();
+                for (int i = 0; i < cnt; i++) {
+                    finds.add(matcher.group(i + 1));
+                }
+                return finds;
+            }
+        }
+        return Collections.emptyList();
     }
 
     public static void main(String[] args) {

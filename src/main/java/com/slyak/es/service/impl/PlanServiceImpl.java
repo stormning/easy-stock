@@ -5,16 +5,21 @@ import com.slyak.es.domain.Plan;
 import com.slyak.es.domain.Stock;
 import com.slyak.es.domain.Trade;
 import com.slyak.es.domain.TradeType;
+import com.slyak.es.hibernate.assembler.EntityAssemblers;
 import com.slyak.es.repo.PlanRepo;
 import com.slyak.es.repo.TradeRepo;
 import com.slyak.es.service.PlanService;
 import com.slyak.es.service.StockService;
+import com.slyak.es.util.JpaUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlanServiceImpl implements PlanService {
@@ -25,8 +30,10 @@ public class PlanServiceImpl implements PlanService {
 
     private StockService stockService;
 
-    public PlanServiceImpl(PlanRepo planRepo) {
+    @Autowired
+    public PlanServiceImpl(PlanRepo planRepo, StockService stockService) {
         this.planRepo = planRepo;
+        this.stockService = stockService;
     }
 
     @Override
@@ -35,20 +42,26 @@ public class PlanServiceImpl implements PlanService {
     }
 
     @Override
-    public Plan getByStockCode(String stockCode) {
-        return planRepo.findByStockCode(stockCode);
+    public Plan init(String stockCode) {
+        Assert.hasText(stockCode, "股票代码不能为空");
+        Stock stock = stockService.getStock(stockCode);
+        Assert.notNull(stock, "无效的股票代码");
+        List<Plan> plans = queryPlans(stock);
+        Assert.isTrue(CollectionUtils.isEmpty(plans), "持仓计划已存在");
+        Plan plan = new Plan();
+        plan.setStock(stock);
+        planRepo.save(plan);
+        return plan;
     }
 
     @Override
-    public Plan init(String stockCode) {
-        Stock stock = stockService.getStock(stockCode);
-        Assert.notNull(stock, "无效的股票代码");
-        Plan plan = getByStockCode(stockCode);
-        Assert.isNull(plan, "持仓计划已存在");
-        plan = new Plan();
-        plan.setStockCode(stockCode);
-        planRepo.save(plan);
-        return plan;
+    public List<Plan> queryPlans(Stock stock) {
+        List<Plan> plans = planRepo.findAll(JpaUtil.getQuerySpecification(new Plan().setStock(stock)));
+        if (!CollectionUtils.isEmpty(plans)){
+            List<Stock> stocks = plans.stream().map(Plan::getStock).collect(Collectors.toList());
+            EntityAssemblers.newInstance().assemble(stocks);
+        }
+        return plans;
     }
 
     public List<Trade> getNextTrades(Long planId) {
@@ -132,11 +145,11 @@ public class PlanServiceImpl implements PlanService {
     }
 
     public static void main(String[] args) {
-        PlanServiceImpl planService = new PlanServiceImpl(null);
+        PlanServiceImpl planService = new PlanServiceImpl(null, null);
         Plan plan = new Plan();
         plan.setCapital(BigDecimal.valueOf(1000));
-        plan.setFirstPrice(BigDecimal.valueOf(9.483));
-        plan.setWorstPrice(BigDecimal.valueOf(4.741));
+        plan.setFirstPrice(BigDecimal.valueOf(0.822));
+        plan.setWorstPrice(BigDecimal.valueOf(0.411));
         plan.setLosePercent(BigDecimal.valueOf(20));
         plan.setWinPercent(BigDecimal.valueOf(20));
         Trade firstTrade = planService.getFirstTrade(plan, BigDecimal.valueOf(0.00015));

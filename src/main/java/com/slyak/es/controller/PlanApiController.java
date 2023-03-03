@@ -4,12 +4,16 @@ import com.slyak.es.domain.Plan;
 import com.slyak.es.domain.Stock;
 import com.slyak.es.service.PlanService;
 import com.slyak.es.service.StockService;
+import com.slyak.es.util.JpaUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/plan")
+@Slf4j
 public class PlanApiController extends BaseController {
 
     private StockService stockService;
@@ -24,6 +28,7 @@ public class PlanApiController extends BaseController {
 
     @PostMapping("/init")
     public Result init(String stockCode) {
+        log.info("init .....................");
         planService.init(stockCode);
         return ok();
     }
@@ -35,8 +40,12 @@ public class PlanApiController extends BaseController {
     }
 
     @GetMapping("/list")
-    public Result stocks(String keyword) {
-        return ok(stockService.queryStocks(keyword));
+    public Result plans(String stockCode) {
+        Stock stock = null;
+        if (StringUtils.hasText(stockCode)) {
+            stock = stockService.getStock(stockCode);
+        }
+        return ok(planService.queryPlans(stock));
     }
 
     @ModelAttribute

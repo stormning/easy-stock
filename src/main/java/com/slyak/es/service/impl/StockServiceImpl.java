@@ -1,25 +1,33 @@
 package com.slyak.es.service.impl;
 
 import com.google.common.collect.Lists;
-import com.slyak.es.domain.Market;
-import com.slyak.es.domain.OrgType;
-import com.slyak.es.domain.Stock;
-import com.slyak.es.domain.StockType;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.slyak.es.domain.*;
+import com.slyak.es.repo.StockRepo;
 import com.slyak.es.service.StockService;
 import com.slyak.es.util.HttpUtil;
 import com.slyak.es.util.StringUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import java.util.List;
+import javax.transaction.Transactional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
 public class StockServiceImpl implements StockService {
 
+    private final StockRepo stockRepo;
+
     static Pattern HINT_PATTERN = Pattern.compile(".*=\"(.*)\"");
 
-
+    @Autowired
+    public StockServiceImpl(StockRepo stockRepo) {
+        this.stockRepo = stockRepo;
+    }
     //https://blog.csdn.net/zchill/article/details/121303871
     //实时行情
     //简易
@@ -39,6 +47,9 @@ public class StockServiceImpl implements StockService {
         if (stockTexts != null) {
             for (String stockText : stockTexts) {
                 String[] stockProps = StringUtils.split(stockText, "~");
+                if (stockProps.length == 1) {
+                    continue;
+                }
                 String[] split = StringUtils.split(stockProps[4], "-");
                 OrgType orgType = EnumUtils.getEnum(OrgType.class, split[0]);
                 if (orgType == null) {
@@ -64,16 +75,65 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
+    @Transactional
     public Stock getStock(String stockCode) {
-        List<Stock> stocks = queryStocks(stockCode);
-        if (stocks.size() > 0) {
-            return stocks.get(0);
+        Stock stock = stockRepo.findByCode(stockCode);
+        if (stock == null) {
+            List<Stock> stocks = queryStocks(stockCode);
+            if (stocks.size() > 0) {
+                stock = stocks.get(0);
+                stock = stockRepo.save(stock);
+            }
         }
+        return stock;
+    }
+
+    @Override
+    public StockInfo getStockInfo(String stockCode) {
         return null;
     }
 
+    @Override
+    public Map<String, StockInfo> mgetStockInfos(Collection<String> stockCodes) {
+        List<StockInfo> stockInfos = getStockInfos(stockCodes);
+        if (CollectionUtils.isEmpty(stockCodes)){
+            return Collections.emptyMap();
+        } else {
+            Map<String,StockInfo> infoMap = Maps.newHashMap();
+            for (StockInfo stockInfo : stockInfos) {
+                infoMap.put(stockInfo.getCode(), stockInfo);
+            }
+            return infoMap;
+        }
+    }
+
+    @Override
+    //https://qt.gtimg.cn/r=0.4209775670385353&q=s_sh600741,s_sh600956
+    public List<StockInfo> getStockInfos(Collection<String> stockCodes) {
+        StringBuilder sb = new StringBuilder("https://qt.gtimg.cn/r=");
+        sb.append(Math.random());
+        sb.append("&q=");
+        for (String stockCode : stockCodes) {
+            sb.append(stockCode).append(",");
+        }
+        String infosText = HttpUtil.doGet(sb.toString());
+        if (infosText.contains("v_pv_none_match")) {
+            return Collections.emptyList();
+        }
+        String[] split = StringUtils.split(infosText, ";");
+        if (split != null && split.length > 0) {
+            List<StockInfo> stockInfos = Lists.newArrayList();
+            for (String s : split) {
+                stockInfos.add(new StockInfo(s));
+            }
+            return stockInfos;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
     public static void main(String[] args) {
-        StockServiceImpl ss = new StockServiceImpl();
-        System.out.println(ss.queryStocks("hyqc"));
+        StockServiceImpl ss = new StockServiceImpl(null);
+        System.out.println(ss.mgetStockInfos(Sets.newHashSet("sh600956")));
     }
 }
