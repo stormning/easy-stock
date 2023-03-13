@@ -1,4 +1,4 @@
-import sec from '@/util/sec'
+import AuthService from '@/util/auth'
 import Vue from 'vue'
 import VueRouter from "vue-router"
 
@@ -13,40 +13,44 @@ const router = new VueRouter({
     routes: [
         {
             path: '/',
-            redirect: '/stocks'
+            redirect: '/plans',
+            meta: { requiresAuth: true }
         },
         {
-            path: '/stocks',
-            component: () => import('../pages/stocks.vue')
+            path: '/plans',
+            component: () => import('../pages/plans.vue'),
+            meta: { requiresAuth: true }
         },
         {
-            path: '/stock',
-            component: () => import('../pages/stock.vue'),
+            path: '/plan/:id',
+            component: () => import('../pages/plan.vue'),
+            meta: { requiresAuth: true }
         },
         {
             path: '/plates',
             component: () => import('../pages/plates.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/login',
+            component: () => import('../pages/login.vue'),
+            meta: { requiresAuth: false }
+        },
+        {
+            path: '/register',
+            component: () => import('../pages/register.vue'),
+            meta: { requiresAuth: false }
         }
     ]
 });
 
 router.beforeEach((to, from, next) => {
-    if (sec.isLogin()) { // 判断是否登录
-        if (to.path === '/login') {  //
-            //登录状态下 访问login.vue页面 会跳到index.vue
-            next({path: '/index'})
-        } else {
-            next()
-        }
-    } else {
-        if (to.path === '/login' || to.path === '/logout') {
-            next()
-        } else {
-            /*sec.initUserInfo(function (){
-                next({path: '/login'})
-            })*/
-            next({path: '/login'})
-        }
+    const authRequired = to.matched.some(record => record.meta.requiresAuth)
+    const loggedIn = AuthService.getToken()
+
+    if (authRequired && !loggedIn) {
+        return next('/login')
     }
+    next()
 });
 export default router

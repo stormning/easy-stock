@@ -74,7 +74,7 @@ export default {
   },
   methods: {
     handleClick(row) {
-      this.$router.push({path: '/stock'})
+      this.$router.push({path: `/plan/${row.id}`})
     },
     initPlan() {
       const that = this

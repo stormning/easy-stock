@@ -1,6 +1,32 @@
 import axios from 'axios'
 import router from "@/util/router";
 import qs from 'qs'
+import { Loading } from 'element-ui';
+
+
+let loadingInstance
+let loadingCount = 0
+
+function startLoading() {
+    if (loadingCount === 0) {
+        loadingInstance = Loading.service({
+            lock: true,
+            text: 'Loading...',
+            background: 'rgba(0, 0, 0, 0.7)'
+        })
+    }
+    loadingCount++
+}
+
+function endLoading() {
+    if (loadingCount <= 0) {
+        return
+    }
+    loadingCount--
+    if (loadingCount === 0) {
+        loadingInstance.close()
+    }
+}
 
 // const origin = location.origin
 // const apiUrl = origin.indexOf('localhost') > 0 /*|| location.port === '8080'*/? `http://${location.hostname}:8080` : origin
@@ -12,6 +38,10 @@ axios.interceptors.request.use(
         /*if (config.url.indexOf("http") < 0) {
             config.url = apiUrl + config.url
         }*/
+        const token = localStorage.getItem('token')
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
         config.crossDomain = true
         if (!config.hasOwnProperty("autoToast")) {
             config.autoToast = true
@@ -25,12 +55,12 @@ axios.interceptors.request.use(
             config.data = qs.stringify(config.data)
         }
         if (!config.hasOwnProperty("indicator") || config.indicator) {
-            // Indicator.open()
+            startLoading()
         }
         return config
     },
     error => {
-        // Indicator.close()
+        endLoading()
         return Promise.reject(error)
     }
 )
@@ -38,9 +68,8 @@ axios.interceptors.request.use(
 const init = function (vm) {
     axios.interceptors.response.use(
         response => {
-            console.log(response)
             if (!response.config.hasOwnProperty("indicator") || response.config.indicator) {
-                // Indicator.close()
+                endLoading()
             }
             const code = response.status
             const hasResultWrapper = response.data.hasOwnProperty("success");
@@ -57,7 +86,7 @@ const init = function (vm) {
             }
         },
         error => {
-            // Indicator.close()
+            endLoading()
             if (error.response) {
                 switch (error.response.status) {
                     case 401:

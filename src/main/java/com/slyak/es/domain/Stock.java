@@ -1,6 +1,7 @@
 package com.slyak.es.domain;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
@@ -13,6 +14,7 @@ import javax.persistence.Transient;
 @Table(name = "t_stock")
 //交易记录
 @Entity
+@NoArgsConstructor
 public class Stock extends AbstractPersistable<Long> {
     private String name;
     private String code;

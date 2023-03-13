@@ -1,13 +1,12 @@
 package com.slyak.es.util;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
+import javax.persistence.criteria.Predicate;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.criteria.Predicate;
 
 @Slf4j
 public class JpaUtil {

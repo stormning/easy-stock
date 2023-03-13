@@ -90,7 +90,7 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public StockInfo getStockInfo(String stockCode) {
-        return null;
+        return getStockInfos(Collections.singleton(stockCode)).get(0);
     }
 
     @Override

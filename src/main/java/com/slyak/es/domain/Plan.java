@@ -2,8 +2,10 @@ package com.slyak.es.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.jpa.domain.AbstractAuditable;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -14,6 +16,8 @@ import java.math.RoundingMode;
 @Table(name = "t_plan")
 @Entity
 @Accessors(chain = true)
+@EntityListeners(AuditingEntityListener.class)
+@NoArgsConstructor
 public class Plan extends AbstractAuditable<User, Long> {
 
     //股票编号
@@ -28,6 +32,16 @@ public class Plan extends AbstractAuditable<User, Long> {
     //持仓总成本
     private BigDecimal cost = BigDecimal.ZERO;
 
+
+    //市值
+    public BigDecimal getMarketVal(){
+        return __getMarketVal().setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal __getMarketVal(){
+        return stock.getInfo().getPrice().multiply(BigDecimal.valueOf(amount));
+    }
+
     //平均持仓成本
     public BigDecimal getAvgPrice() {
         if (amount > 0) {
@@ -38,13 +52,18 @@ public class Plan extends AbstractAuditable<User, Long> {
         }
     }
 
-    public BigDecimal getWin() {
-        BigDecimal avgPrice = getAvgPrice();
-        if (avgPrice.compareTo(BigDecimal.ZERO) > 0) {
-            return stock.getInfo().getPrice().subtract(avgPrice).multiply(BigDecimal.valueOf(100)).divide(avgPrice, 2, RoundingMode.HALF_UP);
+    //盈亏百分比
+    public BigDecimal getWinPercent() {
+        if (cost.compareTo(BigDecimal.ZERO) > 0) {
+            return getWin().multiply(BigDecimal.valueOf(100)).divide(cost, 2, RoundingMode.HALF_UP);
         } else {
             return BigDecimal.ZERO;
         }
+    }
+
+    //盈亏总额
+    public BigDecimal getWin(){
+        return __getMarketVal().subtract(cost).setScale(0, RoundingMode.HALF_UP);
     }
 
     //第一次买入价格

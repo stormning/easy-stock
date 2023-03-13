@@ -1,30 +1,30 @@
 <template>
-  <div class="stock-holder">
+  <div class="stock-holder" v-if="plan!=null">
     <div class="flex-container mb5">
-      <div class="flex stock-title">中国电影</div>
-      <div class="flex stock-code">600977</div>
+      <div class="flex stock-title">{{plan.stock.name}}</div>
+      <div class="flex stock-code">{{plan.stock.code}}</div>
     </div>
     <div class="flex-container mb10">
       <div class="flex flex-end text-minor">总盈亏</div>
       <div class="flex result win">
-        <div class="flex percent">+5.00 %</div>
-        <div class="flex flex-end total">+1235.33</div>
+        <div class="flex percent">{{plan.winPercent}} %</div>
+        <div class="flex flex-end total">{{plan.win}}</div>
       </div>
     </div>
     <div class="flex-container no-padding">
       <div class="flex-container detail-item mr20">市价
-        <div class="flex-auto detail-text">12.3</div>
+        <div class="flex-auto detail-text">{{ plan.stock.info.price }}</div>
       </div>
       <div class="flex-container detail-item">持仓数
-        <div class="flex-auto detail-text">12.3</div>
+        <div class="flex-auto detail-text">{{ plan.amount }}</div>
       </div>
     </div>
     <div class="flex-container no-padding">
-      <div class="flex-container detail-item mr20">成本
-        <div class="flex-auto detail-text">12.3</div>
+      <div class="flex-container detail-item mr20">买入成本
+        <div class="flex-auto detail-text">{{ plan.avgPrice }}</div>
       </div>
       <div class="flex-container detail-item">市值
-        <div class="flex-auto detail-text">12.3</div>
+        <div class="flex-auto detail-text">{{ plan.marketVal }}</div>
       </div>
     </div>
   </div>
@@ -32,7 +32,8 @@
 
 <script>
 export default {
-  name: "StockDetail"
+  name: "PlanDetail",
+  props : ['plan']
 }
 </script>
 

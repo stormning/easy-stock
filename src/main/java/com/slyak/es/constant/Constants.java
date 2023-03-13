@@ -20,20 +20,20 @@ public class Constants {
     /**
      * 计算交易金额
      *
-     * @param totalPrice 总价值
+     * @param totalCost 总价值
      * @param commission 佣金比率
      * @param type       交易类型
      * @return
      */
-    public static BigDecimal trade(BigDecimal totalPrice, BigDecimal commission, TradeType type) {
+    public static BigDecimal trade(BigDecimal totalCost, BigDecimal commission, TradeType type) {
         BigDecimal finalPrice;
-        BigDecimal com = minFee(totalPrice.multiply(commission));
+        BigDecimal com = minFee(totalCost.multiply(commission));
         if (type == TradeType.BUY) {
-            BigDecimal tradeFee = com.add(totalPrice.multiply(TRADE_TAX));
-            finalPrice = BigDecimal.ZERO.subtract(totalPrice.add(tradeFee));
+            BigDecimal tradeFee = com.add(totalCost.multiply(TRADE_TAX));
+            finalPrice = totalCost.add(tradeFee);
         } else {
-            BigDecimal tradeFee = com.add(totalPrice.multiply(TAX_YIN_HUA.add(TRADE_TAX)));
-            finalPrice = totalPrice.subtract(tradeFee);
+            BigDecimal tradeFee = com.add(totalCost.multiply(TAX_YIN_HUA.add(TRADE_TAX)));
+            finalPrice = totalCost.subtract(tradeFee);
         }
         return finalPrice.setScale(2, RoundingMode.HALF_UP);
     }

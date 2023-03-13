@@ -1,11 +1,14 @@
 <template>
   <div id="app" class="app">
-    <el-menu default-active="stocks" :router="true" mode="horizontal">
+    <el-menu default-active="plans" :router="true" mode="horizontal" v-if="isLoggedIn()">
       <el-menu-item index="2-1">我的看板</el-menu-item>
-      <el-menu-item index="stocks">个股计划</el-menu-item>
-      <el-menu-item index="plates">策略管理</el-menu-item>
-      <el-menu-item index="todos">今日代办</el-menu-item>
-      <el-menu-item index="plates">板块机会</el-menu-item>
+      <el-menu-item index="/plans">个股计划</el-menu-item>
+      <el-menu-item index="/plates">策略管理</el-menu-item>
+      <el-menu-item index="/todos">今日代办</el-menu-item>
+      <el-menu-item index="/plates">板块机会</el-menu-item>
+      <el-menu-item class="logout">
+        <el-button type="text" @click="handleLogout">登出</el-button>
+      </el-menu-item>
     </el-menu>
     <el-container>
       <el-main>
@@ -14,8 +17,13 @@
     </el-container>
   </div>
 </template>
-
+<style scoped>
+.logout {
+  float: right ;
+}
+</style>
 <script>
+import AuthService from "@/util/auth";
 
 export default {
   name: 'App',
@@ -44,6 +52,17 @@ export default {
     jumpTo(url) {
       console.log(this)
       this.router.push({path: url})
+    },
+    handleLogout() {
+      // 调用登出接口
+      this.$http.post('/api/auth/logout').then(() => {
+        AuthService.logout()
+        // 跳转到登录页
+        this.$router.push('/login');
+      });
+    },
+    isLoggedIn() {
+      return AuthService.getToken()
     }
   },
   mounted() {

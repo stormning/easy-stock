@@ -1,15 +1,19 @@
 package com.slyak.es.controller;
 
 import com.slyak.es.domain.Plan;
+import com.slyak.es.domain.PlanItem;
 import com.slyak.es.domain.Stock;
 import com.slyak.es.service.PlanService;
+import com.slyak.es.service.PriceStrategy;
 import com.slyak.es.service.StockService;
-import com.slyak.es.util.JpaUtil;
+import com.slyak.es.service.StrategyRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/plan")
@@ -33,10 +37,14 @@ public class PlanApiController extends BaseController {
         return ok();
     }
 
-
     @PostMapping("/save")
     public Result save(@ModelAttribute Plan plan) {
         return ok();
+    }
+
+    @GetMapping("/get")
+    public Result plan(@ModelAttribute Plan plan) {
+        return ok(plan);
     }
 
     @GetMapping("/list")
@@ -47,6 +55,28 @@ public class PlanApiController extends BaseController {
         }
         return ok(planService.queryPlans(stock));
     }
+
+    @GetMapping("/items")
+    public Result items(@ModelAttribute Plan plan) {
+        return ok(planService.getPlanItems(plan.getId()));
+    }
+
+    @PostMapping("/genItemsByStrategy")
+    public Result genItemsByStrategy(@RequestBody StrategyRequest request, @ModelAttribute Plan plan) {
+        PriceStrategy ss = request.initStrategy();
+        BigDecimal startCost = request.getStartCost();
+        BigDecimal supplement = request.getSupplement();
+        List<PlanItem> items = planService.genPlanItems(plan.getId(), ss.genPriceSteps(), startCost, supplement);
+        return ok(items);
+    }
+
+    @PostMapping("/savePlanItems")
+    public Result savePlanItems(@RequestBody List<PlanItem> items, @ModelAttribute Plan plan) {
+        items.forEach(planItem -> planItem.setPlanId(plan.getId()));
+        planService.savePlanItems(items);
+        return ok();
+    }
+
 
     @ModelAttribute
     public Plan getPlan(Long id) {

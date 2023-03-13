@@ -2,6 +2,7 @@ package com.slyak.es.domain;
 
 import com.slyak.es.constant.Constants;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.jpa.domain.AbstractAuditable;
 import org.springframework.util.Assert;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 @Table(name = "t_trade")
 //交易记录
 @Entity
+@NoArgsConstructor
 public class Trade extends AbstractAuditable<User, Long> {
 
     //股票代码
