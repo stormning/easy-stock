@@ -26,7 +26,6 @@
     </el-form>
     <el-table
         :data="plans"
-        height="250"
         style="width: 100%">
       <el-table-column
           prop="stock.name"
