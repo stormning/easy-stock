@@ -1,6 +1,7 @@
 package com.slyak.es.service.impl;
 
 import com.google.common.collect.Lists;
+import com.slyak.es.config.SecurityUtils;
 import com.slyak.es.constant.Constants;
 import com.slyak.es.domain.*;
 import com.slyak.es.hibernate.assembler.EntityAssemblers;
@@ -11,6 +12,7 @@ import com.slyak.es.service.PlanService;
 import com.slyak.es.service.StockService;
 import com.slyak.es.util.JpaUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -25,13 +27,13 @@ import java.util.stream.Collectors;
 @Service
 public class PlanServiceImpl implements PlanService {
 
-    private PlanRepo planRepo;
+    private final PlanRepo planRepo;
 
-    private PlanItemRepo planItemRepo;
+    private final PlanItemRepo planItemRepo;
 
     private TradeRepo tradeRepo;
 
-    private StockService stockService;
+    private final StockService stockService;
 
     @Autowired
     public PlanServiceImpl(PlanRepo planRepo, PlanItemRepo planItemRepo, StockService stockService) {
@@ -58,7 +60,7 @@ public class PlanServiceImpl implements PlanService {
         Assert.hasText(stockCode, "股票代码不能为空");
         Stock stock = stockService.getStock(stockCode);
         Assert.notNull(stock, "无效的股票代码");
-        List<Plan> plans = queryPlans(stock);
+        List<Plan> plans = queryUserPlans(SecurityUtils.getUser(), stock);
         Assert.isTrue(CollectionUtils.isEmpty(plans), "持仓计划已存在");
         Plan plan = new Plan();
         plan.setStock(stock);
@@ -67,8 +69,10 @@ public class PlanServiceImpl implements PlanService {
     }
 
     @Override
-    public List<Plan> queryPlans(Stock stock) {
-        List<Plan> plans = planRepo.findAll(JpaUtil.getQuerySpecification(new Plan().setStock(stock)));
+    public List<Plan> queryUserPlans(User user, Stock stock) {
+        Plan plan = new Plan().setStock(stock);
+        plan.setCreatedBy(user);
+        List<Plan> plans = planRepo.findAll(JpaUtil.getQuerySpecification(plan, null));
         if (!CollectionUtils.isEmpty(plans)) {
             List<Stock> stocks = plans.stream().map(Plan::getStock).collect(Collectors.toList());
             EntityAssemblers.newInstance().assemble(stocks);
@@ -78,7 +82,7 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public List<PlanItem> getPlanItems(Long planId) {
-        return planItemRepo.findPlanItemsByPlanId(planId);
+        return planItemRepo.findPlanItemsByPlanIdOrderByPriceDesc(planId);
     }
 
     @Override
@@ -97,7 +101,7 @@ public class PlanServiceImpl implements PlanService {
             PlanItem item = new PlanItem();
             item.setPlanId(planId);
             int amount;
-            BigDecimal cost;
+//            BigDecimal cost;
             if (i == 0) {
                 amount = firstAmount;
             } else {
@@ -115,79 +119,82 @@ public class PlanServiceImpl implements PlanService {
             if (amount <= 0) {
                 continue;
             }
-
-            cost = price.multiply(BigDecimal.valueOf(amount));
-            BigDecimal costWithFee = Constants.trade(cost, new BigDecimal("0.0001"), TradeType.BUY);
+            BigDecimal costWithFee = getCostWithFee(amount, price);
             totalCost = totalCost.add(costWithFee);
             totalAmount = totalAmount.add(BigDecimal.valueOf(amount));
             item.setCost(costWithFee);
             item.setAmount(amount);
             item.setPrice(price);
-
             items.add(item);
         }
         planItemRepo.saveAll(items);
         return items;
     }
 
+    private BigDecimal getCostWithFee(long amount, BigDecimal price) {
+        BigDecimal cost = price.multiply(BigDecimal.valueOf(amount));
+        return Constants.trade(cost, new BigDecimal("0.0001"), TradeType.BUY);
+    }
+
+    private PlanItem resetCost(PlanItem planItem) {
+        planItem.setCost(getCostWithFee(planItem.getAmount(), planItem.getPrice()));
+        return planItem;
+    }
+
     @Override
     @Transactional
     public void savePlanItems(List<PlanItem> items) {
-        planItemRepo.saveAll(items);
+        for (PlanItem item : items) {
+            savePlanItem(item);
+        }
     }
 
-    // 目前平均成本 * 容忍折损率 = 新购价格
-    // (turnOver + price *n) * partLose/ (amount+n) = price
-    // turnOver*partLose + price*partLose* n = price*amount + price*n
-    // n = (turnOver*partLose - price*amount)/(price-price*partLose)
-    private Trade nextTrade(long amount, BigDecimal lastPrice, BigDecimal turnover, BigDecimal marginStep, BigDecimal partLose) {
-        BigDecimal price = lastPrice.subtract(marginStep);
-        BigDecimal numerator = turnover.multiply(partLose).subtract(price.multiply(BigDecimal.valueOf(amount)));
-        BigDecimal denominator = price.subtract(price.multiply(partLose));
-        long amountToBuy = numerator.divide(denominator, 0, RoundingMode.CEILING).longValue();
-        amountToBuy = (long) (Math.ceil(amountToBuy / 100.0) * 100);
-        return new Trade().setAmount(amountToBuy).setPrice(price);
+    @Override
+    @Transactional
+    public PlanItem savePlanItem(PlanItem planItem) {
+        return planItemRepo.save(resetCost(planItem));
     }
 
-    //建仓
-    public Trade getFirstTrade(Plan plan, BigDecimal commission) {
-        BigDecimal capital = plan.getCapital();
-        BigDecimal marginStep = plan.getMarginStep();
-        int amount = 0;
-        BigDecimal turnover;
-        do {
-            amount += 100;
-            int total = amount;
-            BigDecimal lastPrice = plan.getFirstPrice();
-            turnover = BigDecimal.ZERO.subtract(Constants.trade(lastPrice.multiply(BigDecimal.valueOf(amount)), commission, TradeType.BUY));
-            int marginCnt = BigDecimal.valueOf(100).divide(plan.getLosePercent(), 1, RoundingMode.CEILING).intValue();
-            for (int i = 0; i < marginCnt + 1; i++) {
-                //多算一次
-                BigDecimal partLose = getMarginLose(marginStep, lastPrice);
-                Trade trade = nextTrade(total, lastPrice, turnover, marginStep, partLose).init(plan, commission, TradeType.BUY);
-                lastPrice = trade.getPrice();
-                total += trade.getAmount();
-                turnover = turnover.subtract(trade.getTurnover());
-                System.out.println(trade);
-            }
-        } while (turnover.compareTo(capital) < 0);
-        return new Trade().setPrice(plan.getFirstPrice()).setAmount(amount).init(plan, commission, TradeType.BUY);
+    @Override
+    @Transactional
+    public void deletePlanItem(Long id) {
+        Optional<PlanItem> planItemOptional = planItemRepo.findById(id);
+        if (planItemOptional.isPresent()){
+            PlanItem planItem = planItemOptional.get();
+            Assert.isTrue(planItem.getStatus() == PlanItemStatus.WAIT, "已完成的项不允许删除");
+            planItemRepo.delete(planItem);
+        }
+
     }
 
-    //补仓到损失多少百分比
-    public BigDecimal getMarginLose(BigDecimal marginStep, BigDecimal lastPrice) {
-        return BigDecimal.valueOf(1).subtract(marginStep.divide(lastPrice.multiply(BigDecimal.valueOf(2)), 2, RoundingMode.CEILING));
+    @Override
+    @Transactional
+    public void finishItem(Long id) {
+        Optional<PlanItem> planItemOptional = planItemRepo.findById(id);
+        if (planItemOptional.isPresent()){
+            PlanItem planItem = planItemOptional.get();
+            planItem.setStatus(PlanItemStatus.FINISH);
+            planItemRepo.save(planItem);
+
+            Long planId = planItem.getPlanId();
+            Plan plan = getById(planId);
+            //累加
+            plan.setAmount(plan.getAmount() + planItem.getAmount());
+            plan.setCost(plan.getCost().add(planItem.getCost()));
+            planRepo.save(plan);
+
+        }
     }
 
-    public static void main(String[] args) {
-        PlanServiceImpl planService = new PlanServiceImpl(null, null, null);
-        Plan plan = new Plan();
-        plan.setCapital(BigDecimal.valueOf(1000));
-        plan.setFirstPrice(BigDecimal.valueOf(0.822));
-        plan.setWorstPrice(BigDecimal.valueOf(0.411));
-        plan.setLosePercent(BigDecimal.valueOf(20));
-        plan.setWinPercent(BigDecimal.valueOf(20));
-        Trade firstTrade = planService.getFirstTrade(plan, BigDecimal.valueOf(0.00015));
-        System.out.println(firstTrade);
+    @Override
+    @Transactional
+    public void deletePlanItems(Long id) {
+        Plan plan = getById(id);
+        if (plan!=null){
+            planItemRepo.deleteByPlanId(plan.getId());
+            plan.setAmount(0);
+            plan.setCost(BigDecimal.ZERO);
+            planRepo.save(plan);
+        }
     }
 }

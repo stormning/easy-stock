@@ -3,6 +3,7 @@ package com.slyak.es.service;
 import com.slyak.es.domain.Plan;
 import com.slyak.es.domain.PlanItem;
 import com.slyak.es.domain.Stock;
+import com.slyak.es.domain.User;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,7 +13,7 @@ public interface PlanService {
 
     Plan init(String stockCode);
 
-    List<Plan> queryPlans(Stock stock);
+    List<Plan> queryUserPlans(User user, Stock stock);
 
     List<PlanItem> getPlanItems(Long planId);
 
@@ -27,4 +28,12 @@ public interface PlanService {
     List<PlanItem> genPlanItems(Long planId, List<BigDecimal> prices, BigDecimal startCost, BigDecimal supplement);
 
     void savePlanItems(List<PlanItem> items);
+
+    PlanItem savePlanItem(PlanItem planItem);
+
+    void deletePlanItem(Long id);
+
+    void finishItem(Long id);
+
+    void deletePlanItems(Long id);
 }

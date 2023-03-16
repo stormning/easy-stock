@@ -1,5 +1,6 @@
 package com.slyak.es.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,8 @@ import java.util.Set;
 @NoArgsConstructor
 public class User extends AbstractPersistable<Long> {
     private String name;
+
+    @JsonIgnore
     private String pwd;
     //手续费率
     private BigDecimal commission;

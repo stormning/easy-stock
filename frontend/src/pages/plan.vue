@@ -1,18 +1,18 @@
 <template>
   <div>
-    <el-breadcrumb separator="/" class="mb20">
-      <el-breadcrumb-item :to="{ path: '/plans' }">个股计划</el-breadcrumb-item>
-      <el-breadcrumb-item>中国电影</el-breadcrumb-item>
-    </el-breadcrumb>
-    <StockDetail :plan="plan"/>
+    <StockDetail :plan="plan" ref="stockDetail"/>
     <div class="line"></div>
     <div class="mb10">
-      <el-button type="primary" @click="dialogGenFormVisible = true">按策略生成</el-button>
-      <el-button type="primary" @click="dialogFormVisible = true">自定义</el-button>
+      <el-button type="primary" @click="dialogGenFormVisible = true" :disabled="plan.amount>0">按策略生成</el-button>
+      <el-button type="primary" @click="itemFormVisible = true">自定义</el-button>
+      <el-button type="danger" @click="deleteItems">清空所有</el-button>
     </div>
     <el-table
         :data="items"
-        style="width: 100%" :row-class-name="tableRowClassName" :highlight-current-row="false">
+        style="width: 100%"
+        :row-class-name="tableRowClassName"
+        :highlight-current-row="false"
+    >
       <el-table-column
           prop="price"
           label="价格"
@@ -24,7 +24,7 @@
           width="100">
       </el-table-column>
       <el-table-column
-          prop="turnover"
+          prop="cost"
           label="计划金额">
       </el-table-column>
       <el-table-column
@@ -32,23 +32,40 @@
           label="备注">
       </el-table-column>
       <el-table-column
-          prop="status.text"
           label="状态">
+        <template slot-scope="scope">
+          {{ scope.row.status === 'WAIT' ? '待完成' : '已完成' }}
+        </template>
       </el-table-column>
       <el-table-column
           fixed="right"
           label="操作">
         <template slot-scope="scope">
-          <template v-if="scope.row.status.code==='WAIT'">
-            <el-button @click="onItemOpen(scope.row)" type="text" size="small">完成</el-button>
-            <el-button @click="onItemOpen(scope.row)" type="text" size="small">编辑</el-button>
-            <el-button @click="onItemOpen(scope.row)" type="text" size="small">删除</el-button>
+          <template v-if="scope.row.status==='WAIT'">
+            <el-button @click="finishItem(scope.row)" type="text" size="small">完成</el-button>
+            <el-button @click="editItem(scope.row)" type="text" size="small">编辑</el-button>
+            <el-button @click="deleteItem(scope.row)" type="text" size="small">删除</el-button>
           </template>
         </template>
       </el-table-column>
     </el-table>
+    <table class="summary">
+      <tr>
+        <td>计划金额：{{ summary.totalCost }}元</td>
+        <td>计划数量：{{ summary.totalAmount }}股</td>
+      </tr>
+      <tr>
+        <td>持仓金额：{{ summary.curCost }}元</td>
+        <td>持仓数量: {{ summary.curAmount }}股</td>
+      </tr>
+      <tr>
+        <td>剩余金额：{{ summary.leftCost }}元</td>
+        <td>剩余数量: {{ summary.leftAmount }}股</td>
+      </tr>
+    </table>
 
-    <el-dialog title="计划项" :visible.sync="dialogFormVisible" :destroy-on-close="true" :before-close="onItemClose">
+
+    <el-dialog title="计划项" :visible.sync="itemFormVisible" :destroy-on-close="true" :before-close="onItemClose">
       <el-form :model="curItem">
         <el-form-item label="价格" :label-width="formLabelWidth">
           <el-input v-model="curItem.price" autocomplete="off"></el-input>
@@ -62,7 +79,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="onItemClose">取 消</el-button>
-        <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="saveItem">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -122,6 +139,16 @@
 .el-table .finished {
   background: #F2F6FC;
 }
+
+.summary {
+  float: right;
+  margin-top: 10px;
+  td {
+    border: 1px solid #000000;
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+}
 </style>
 <script>
 import StockDetail from "@/components/PlanDetail";
@@ -134,6 +161,7 @@ export default {
       plan: null,
       active: 1,
       items: [],
+      hasFinishedItem: false,
       strategies: [
         {
           className: 'com.slyak.es.service.impl.SimplePriceStepStrategy',
@@ -162,20 +190,70 @@ export default {
       },
       curItem: {},
       dialogGenFormVisible: false,
-      dialogFormVisible: false,
+      itemFormVisible: false,
       formLabelWidth: '120px'
     }
   },
   methods: {
     tableRowClassName({row, rowIndex}) {
-      return row.status.code.toLowerCase();
+      return row.status.toLowerCase();
     },
-    onItemOpen(row) {
+    editItem(row) {
       this.curItem = row
-      this.dialogFormVisible = true
+      this.itemFormVisible = true
+    },
+    finishItem(row) {
+      const that = this
+      this.$confirm('确定已经完成?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http.post(`/api/plan/finishItem`, {'id':row.id}).then(res=>{
+          that.loadPlanItems()
+        })
+      })
+    },
+    deleteItem(row) {
+      const that = this
+      this.$confirm('确定要删除此项?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http.post(`/api/plan/deleteItem`, {'id':row.id}).then(res=>{
+          that.loadPlanItems()
+        })
+      })
+    },
+    saveItem() {
+      const that = this
+      this.curItem.planId = this.plan.id
+      this.$http.post(`/api/plan/saveItem`, this.curItem).then(res => {
+        that.itemFormVisible = false
+        that.loadPlanItems()
+      })
+    },
+    deleteItems() {
+      const that = this
+      that.$confirm('确定要清空所有计划项?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+          that.$confirm('这项操作不可逆，确定继续?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            that.$http.post(`/api/plan/deleteItems`, {'id':that.plan.id}).then(res=>{
+              that.loadPlanItems()
+            })
+          })
+      })
     },
     onItemClose() {
-      this.dialogFormVisible = false
+      this.itemFormVisible = false
       this.curItem = {}
     },
     genItemsByStrategy() {
@@ -184,23 +262,56 @@ export default {
         that.items = res.data
         that.dialogGenFormVisible = false
       })
+    },
+    loadPlanItems() {
+      const that = this
+      let planId = this.$route.params.id
+      this.$http.get(`/api/plan/items?id=${planId}`).then(res => {
+        that.items = res.data
+        that.loadPlan()
+      })
+    },
+    loadPlan() {
+      const that = this
+      let planId = this.$route.params.id
+      this.$http.get(`/api/plan/get?id=${planId}`).then(res => {
+        that.plan = res.data
+        that.strategy.className = that.strategies[0].className
+        that.$refs.stockDetail.$props.plan = res.data
+      })
     }
   },
   beforeMount() {
-    const that = this
-    let planId = this.$route.params.id
-    this.$http.get(`/api/plan/get?id=${planId}`).then(res => {
-      that.plan = res.data
-      that.strategy.className = that.strategies[0].className
-    })
+    this.loadPlan()
   },
   mounted() {
     console.log(this.plan)
-    const that = this
-    let planId = this.$route.params.id
-    this.$http.get(`/api/plan/items?id=${planId}`).then(res => {
-
-    })
+    this.loadPlanItems()
+  },
+  computed: {
+    summary: function () {
+      let totalCost = new Decimal('0.00')
+      let curCost = new Decimal('0.00')
+      let leftCost = new Decimal('0.00')
+      let totalAmount = 0
+      let curAmount = 0
+      let leftAmount = 0
+      if (this.items && this.items.length > 0) {
+        for (let i = 0; i < this.items.length; i++) {
+          let item = this.items[i];
+          totalCost = totalCost.add(new Decimal(item.cost))
+          totalAmount += item.amount
+          if (item.status === 'WAIT') {
+            leftCost = leftCost.add(new Decimal(item.cost))
+            leftAmount += item.amount
+          } else {
+            curCost = curCost.add(new Decimal(item.cost))
+            curAmount += item.amount
+          }
+        }
+      }
+      return {totalCost, totalAmount, curCost, curAmount, leftCost, leftAmount}
+    }
   },
   watch: {
     'strategy.className': {

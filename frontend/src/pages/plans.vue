@@ -38,15 +38,19 @@
       </el-table-column>
       <el-table-column
           prop="avgPrice"
-          label="持仓成本">
+          label="持仓均价">
+      </el-table-column>
+      <el-table-column
+          prop="amount"
+          label="股数">
+      </el-table-column>
+      <el-table-column
+          prop="cost"
+          label="持仓总成本">
       </el-table-column>
       <el-table-column
           prop="win"
           label="盈亏">
-      </el-table-column>
-      <el-table-column
-          prop="nextBuy.price"
-          label="下次加仓">
       </el-table-column>
       <el-table-column
           fixed="right"
@@ -91,16 +95,19 @@ export default {
       })
     },
     queryStocks(query) {
-      if (query !== '') {
-        this.loading = true;
-        this.$http.get(`/api/stock/list?keyword=${query}`).then(res => {
-          this.loading = false;
-          if (res.success) {
-            this.options = res.data
-          } else {
-            this.options = []
-          }
-        })
+      const that = this
+      if (query !== '' && !that.loading) {
+        setTimeout(function (){
+          that.loading = true;
+          that.$http.get(`/api/stock/list?keyword=${query}`).then(res => {
+            that.loading = false;
+            if (res.success) {
+              that.options = res.data
+            } else {
+              that.options = []
+            }
+          })
+        },500)
       } else {
         this.options = [];
       }

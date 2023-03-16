@@ -1,6 +1,6 @@
 package com.slyak.es.controller;
 
-import com.slyak.es.domain.Plan;
+import com.slyak.es.config.SecurityUtils;
 import com.slyak.es.domain.PlanItem;
 import com.slyak.es.domain.Stock;
 import com.slyak.es.service.PlanService;
@@ -37,14 +37,9 @@ public class PlanApiController extends BaseController {
         return ok();
     }
 
-    @PostMapping("/save")
-    public Result save(@ModelAttribute Plan plan) {
-        return ok();
-    }
-
     @GetMapping("/get")
-    public Result plan(@ModelAttribute Plan plan) {
-        return ok(plan);
+    public Result plan(Long id) {
+        return ok(planService.getById(id));
     }
 
     @GetMapping("/list")
@@ -53,37 +48,43 @@ public class PlanApiController extends BaseController {
         if (StringUtils.hasText(stockCode)) {
             stock = stockService.getStock(stockCode);
         }
-        return ok(planService.queryPlans(stock));
+        return ok(planService.queryUserPlans(SecurityUtils.getUser(), stock));
     }
 
     @GetMapping("/items")
-    public Result items(@ModelAttribute Plan plan) {
-        return ok(planService.getPlanItems(plan.getId()));
+    public Result items(Long id) {
+        return ok(planService.getPlanItems(id));
     }
 
     @PostMapping("/genItemsByStrategy")
-    public Result genItemsByStrategy(@RequestBody StrategyRequest request, @ModelAttribute Plan plan) {
+    public Result genItemsByStrategy(@RequestBody StrategyRequest request, Long id) {
         PriceStrategy ss = request.initStrategy();
         BigDecimal startCost = request.getStartCost();
         BigDecimal supplement = request.getSupplement();
-        List<PlanItem> items = planService.genPlanItems(plan.getId(), ss.genPriceSteps(), startCost, supplement);
+        List<PlanItem> items = planService.genPlanItems(id, ss.genPriceSteps(), startCost, supplement);
         return ok(items);
     }
 
-    @PostMapping("/savePlanItems")
-    public Result savePlanItems(@RequestBody List<PlanItem> items, @ModelAttribute Plan plan) {
-        items.forEach(planItem -> planItem.setPlanId(plan.getId()));
-        planService.savePlanItems(items);
+    @PostMapping("/saveItem")
+    public Result saveItem(@RequestBody PlanItem planItem){
+        return ok(planService.savePlanItem(planItem));
+    }
+
+    @PostMapping("/deleteItem")
+    public Result deleteItem(Long id) {
+        planService.deletePlanItem(id);
         return ok();
     }
 
+    @PostMapping("/deleteItems")
+    public Result deleteItems(Long id) {
+        planService.deletePlanItems(id);
+        return ok();
+    }
 
-    @ModelAttribute
-    public Plan getPlan(Long id) {
-        if (id == null) {
-            return null;
-        }
-        Plan plan = planService.getById(id);
-        return plan == null ? new Plan() : plan;
+    @PostMapping("/finishItem")
+    public Result finishItem(Long id) {
+        planService.finishItem(id);
+        return ok();
     }
 }
