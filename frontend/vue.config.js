@@ -11,6 +11,7 @@ module.exports = {
     publicPath: './',
     lintOnSave: false,
     indexPath:'index.htm',
+    port: 80,
     devServer: {
         disableHostCheck: true,
         proxy: {
