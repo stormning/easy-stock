@@ -11,8 +11,8 @@ import com.slyak.es.repo.TradeRepo;
 import com.slyak.es.service.PlanService;
 import com.slyak.es.service.StockService;
 import com.slyak.es.util.JpaUtil;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class PlanServiceImpl implements PlanService {
+public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanItem>, InitializingBean {
 
     private final PlanRepo planRepo;
 
@@ -35,11 +35,15 @@ public class PlanServiceImpl implements PlanService {
 
     private final StockService stockService;
 
+    private final TaskCompletionHandlerRegistry registry;
+
     @Autowired
-    public PlanServiceImpl(PlanRepo planRepo, PlanItemRepo planItemRepo, StockService stockService) {
+    public PlanServiceImpl(PlanRepo planRepo, PlanItemRepo planItemRepo, TradeRepo tradeRepo, StockService stockService, TaskCompletionHandlerRegistry registry) {
         this.planRepo = planRepo;
         this.planItemRepo = planItemRepo;
+        this.tradeRepo = tradeRepo;
         this.stockService = stockService;
+        this.registry = registry;
     }
 
     @Override
@@ -159,7 +163,7 @@ public class PlanServiceImpl implements PlanService {
     @Transactional
     public void deletePlanItem(Long id) {
         Optional<PlanItem> planItemOptional = planItemRepo.findById(id);
-        if (planItemOptional.isPresent()){
+        if (planItemOptional.isPresent()) {
             PlanItem planItem = planItemOptional.get();
             Assert.isTrue(planItem.getStatus() == PlanItemStatus.WAIT, "已完成的项不允许删除");
             planItemRepo.delete(planItem);
@@ -171,7 +175,7 @@ public class PlanServiceImpl implements PlanService {
     @Transactional
     public void finishItem(Long id) {
         Optional<PlanItem> planItemOptional = planItemRepo.findById(id);
-        if (planItemOptional.isPresent()){
+        if (planItemOptional.isPresent()) {
             PlanItem planItem = planItemOptional.get();
             planItem.setStatus(PlanItemStatus.FINISH);
             planItemRepo.save(planItem);
@@ -190,11 +194,21 @@ public class PlanServiceImpl implements PlanService {
     @Transactional
     public void deletePlanItems(Long id) {
         Plan plan = getById(id);
-        if (plan!=null){
+        if (plan != null) {
             planItemRepo.deleteByPlanId(plan.getId());
             plan.setAmount(0);
             plan.setCost(BigDecimal.ZERO);
             planRepo.save(plan);
         }
+    }
+
+    @Override
+    public void handleCompletion(Task<PlanItem> task) {
+        finishItem(task.getRelatedEntityId());
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        registry.registerHandler(PlanItem.class, this);
     }
 }
