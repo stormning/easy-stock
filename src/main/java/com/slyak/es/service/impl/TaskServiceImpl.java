@@ -4,10 +4,12 @@ import com.slyak.es.domain.Task;
 import com.slyak.es.domain.TaskStatus;
 import com.slyak.es.repo.TaskRepository;
 import com.slyak.es.service.TaskService;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ClassUtils;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -30,16 +32,8 @@ public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService
     }
 
     @Override
-    public Task<T> updateTask(Long taskId, Task<T> task) {
-        Task<T> existingTask = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        existingTask.setTitle(task.getTitle());
-        existingTask.setContent(task.getContent());
-        existingTask.setDueDate(task.getDueDate());
-        existingTask.setStatus(task.getStatus());
-        existingTask.setRelatedEntityType(task.getRelatedEntityType());
-        existingTask.setRelatedEntityId(task.getRelatedEntityId());
-        return taskRepository.save(existingTask);
+    public Task<T> saveTask(Task<T> task) {
+        return taskRepository.save(task);
     }
 
     @Override
@@ -61,6 +55,8 @@ public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService
     }
 
     @Override
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     public void completeTask(Long taskId) {
         Task<T> task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
@@ -71,7 +67,7 @@ public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService
         taskRepository.save(task);
 
         // get the related entity type and call the completion handler
-        Class<T> entityType = task.getRelatedEntityType();
+        Class<T> entityType = (Class<T>) ClassUtils.forName(task.getRelatedEntityType(), ClassUtils.getDefaultClassLoader());
         TaskCompletionHandler<T> handler = handlerRegistry.getHandler(entityType);
         if (handler != null) {
             handler.handleCompletion(task);

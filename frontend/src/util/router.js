@@ -40,6 +40,11 @@ const router = new VueRouter({
             path: '/register',
             component: () => import('../pages/register.vue'),
             meta: { requiresAuth: false }
+        },
+        {
+            path: '/tasks',
+            component: () => import('../pages/tasks.vue'),
+            meta: { requiresAuth: true }
         }
     ]
 });

@@ -9,7 +9,7 @@ public interface TaskService<T extends Persistable<Long>> {
 
     Task<T> createTask(Task<T> task);
 
-    Task<T> updateTask(Long taskId, Task<T> task);
+    Task<T> saveTask(Task<T> task);
 
     void deleteTask(Long taskId);
 

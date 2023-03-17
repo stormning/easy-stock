@@ -26,7 +26,7 @@ public class Task<T extends Persistable<Long>> extends AbstractPersistable<Long>
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
-    private Class<T> relatedEntityType;
+    private String relatedEntityType;
 
     private Long relatedEntityId;
 
