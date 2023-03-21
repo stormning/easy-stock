@@ -1,5 +1,6 @@
 package com.slyak.es.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.slyak.es.config.SecurityUtils;
 import com.slyak.es.constant.Constants;
@@ -10,9 +11,13 @@ import com.slyak.es.repo.PlanRepo;
 import com.slyak.es.repo.TradeRepo;
 import com.slyak.es.service.PlanService;
 import com.slyak.es.service.StockService;
+import com.slyak.es.service.TaskContentMaker;
 import com.slyak.es.util.JpaUtil;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -25,7 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanItem>, InitializingBean {
+public class PlanServiceImpl implements PlanService, TaskCompletionHandler, InitializingBean {
 
     private final PlanRepo planRepo;
 
@@ -76,7 +81,7 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanI
     public List<Plan> queryUserPlans(User user, Stock stock) {
         Plan plan = new Plan().setStock(stock);
         plan.setCreatedBy(user);
-        List<Plan> plans = planRepo.findAll(JpaUtil.getQuerySpecification(plan, null));
+        List<Plan> plans = planRepo.findAll(JpaUtil.getQuerySpecification(plan, Sort.by(Sort.Direction.DESC, "cost")));
         if (!CollectionUtils.isEmpty(plans)) {
             List<Stock> stocks = plans.stream().map(Plan::getStock).collect(Collectors.toList());
             EntityAssemblers.newInstance().assemble(stocks);
@@ -123,7 +128,7 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanI
             if (amount <= 0) {
                 continue;
             }
-            BigDecimal costWithFee = getCostWithFee(amount, price);
+            BigDecimal costWithFee = getCostWithFee(amount, price, TradeType.BUY);
             totalCost = totalCost.add(costWithFee);
             totalAmount = totalAmount.add(BigDecimal.valueOf(amount));
             item.setCost(costWithFee);
@@ -135,13 +140,13 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanI
         return items;
     }
 
-    private BigDecimal getCostWithFee(long amount, BigDecimal price) {
+    private BigDecimal getCostWithFee(long amount, BigDecimal price, TradeType tt) {
         BigDecimal cost = price.multiply(BigDecimal.valueOf(amount));
-        return Constants.trade(cost, new BigDecimal("0.0001"), TradeType.BUY);
+        return Constants.trade(cost, new BigDecimal("0.0001"), tt);
     }
 
     private PlanItem resetCost(PlanItem planItem) {
-        planItem.setCost(getCostWithFee(planItem.getAmount(), planItem.getPrice()));
+        planItem.setCost(getCostWithFee(planItem.getAmount(), planItem.getPrice(), TradeType.BUY));
         return planItem;
     }
 
@@ -202,9 +207,73 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler<PlanI
         }
     }
 
+    @NoArgsConstructor
+    @Data
+    public static class PlanItemTaskContent implements TaskContentMaker<PlanItemTaskContent> {
+
+        private TradeType tradeType;
+
+        private BigDecimal price;
+
+        private long amount;
+
+        private String stock;
+
+
+        public PlanItemTaskContent(TradeType tradeType, BigDecimal price, long amount) {
+            this.tradeType = tradeType;
+            this.price = price;
+            this.amount = amount;
+        }
+
+        @Override
+        public PlanItemTaskContent deserialize(String content) {
+            return JSON.parseObject(content, this.getClass());
+        }
+
+        @Override
+        public String serialize() {
+            return JSON.toJSONString(this);
+        }
+
+        @Override
+        public String getTitle() {
+            return "【" + stock + "】" + "单价：" + price.toString() + "，" + tradeType.getTitle() + "：" + amount + "股";
+        }
+    }
+
+
     @Override
-    public void handleCompletion(Task<PlanItem> task) {
-        finishItem(task.getRelatedEntityId());
+    @Transactional
+    public void handleCompletion(Task task) {
+        String content = task.getContent();
+        PlanItemTaskContent tc = JSON.parseObject(content, PlanItemTaskContent.class);
+        TradeType tradeType = tc.getTradeType();
+        BigDecimal price = tc.getPrice();
+        Long itemId = task.getRelatedEntityId();
+        if (tradeType == TradeType.BUY) {
+            finishItem(itemId);
+        } else {
+            sellItem(itemId, price);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void sellItem(Long itemId, BigDecimal price) {
+        Optional<PlanItem> itemOptional = planItemRepo.findById(itemId);
+        if (itemOptional.isPresent()){
+            PlanItem planItem = itemOptional.get();
+            planItem.setStatus(PlanItemStatus.WAIT);
+            //减去
+            Long planId = planItem.getPlanId();
+            Plan plan = getById(planId);
+            long amount = planItem.getAmount();
+            plan.setAmount(plan.getAmount() - amount);
+            BigDecimal income = getCostWithFee(amount, price, TradeType.SELL);
+            plan.setCost(plan.getCost().subtract(income));
+            planRepo.save(plan);
+        }
     }
 
     @Override

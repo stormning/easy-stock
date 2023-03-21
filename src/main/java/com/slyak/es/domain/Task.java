@@ -13,7 +13,7 @@ import java.util.Date;
 @Entity
 @Table(name = "task")
 @Data
-public class Task<T extends Persistable<Long>> extends AbstractPersistable<Long> {
+public class Task extends AbstractPersistable<Long> {
 
     private String title;
 
@@ -24,7 +24,7 @@ public class Task<T extends Persistable<Long>> extends AbstractPersistable<Long>
     private Date completedAt;
 
     @Enumerated(EnumType.STRING)
-    private TaskStatus status;
+    private TaskStatus status = TaskStatus.PENDING;
 
     private String relatedEntityType;
 

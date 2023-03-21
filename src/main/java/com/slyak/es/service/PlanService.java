@@ -36,4 +36,6 @@ public interface PlanService {
     void finishItem(Long id);
 
     void deletePlanItems(Long id);
+
+    void sellItem(Long itemId, BigDecimal price);
 }

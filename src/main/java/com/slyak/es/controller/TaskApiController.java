@@ -15,10 +15,10 @@ import java.util.List;
 @Slf4j
 public class TaskApiController<T extends Persistable<Long>> extends BaseController {
     @Autowired
-    private TaskService<T> taskService;
+    private TaskService taskService;
 
     @GetMapping("/list")
-    public List<Task<T>> getAllTasks() {
+    public List<Task> getAllTasks() {
         return taskService.getAllTasks();
     }
 

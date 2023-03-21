@@ -1,21 +1,20 @@
 package com.slyak.es.service;
 
 import com.slyak.es.domain.Task;
-import org.springframework.data.domain.Persistable;
 
 import java.util.List;
 
-public interface TaskService<T extends Persistable<Long>> {
+public interface TaskService {
 
-    Task<T> createTask(Task<T> task);
+    Task createTask(TaskContentMaker<?> contentMaker, Class<?> relClass, Long relId);
 
-    Task<T> saveTask(Task<T> task);
+    Task saveTask(Task task);
 
     void deleteTask(Long taskId);
 
-    List<Task<T>> getAllTasks();
+    List<Task> getAllTasks();
 
-    Task<T> getTaskById(Long taskId);
+    Task getTaskById(Long taskId);
 
     void completeTask(Long taskId);
 }

@@ -6,6 +6,7 @@
       <el-menu-item index="/tasks">今日代办</el-menu-item>
       <el-menu-item index="/plates">策略管理</el-menu-item>
       <el-menu-item index="/plates">板块机会</el-menu-item>
+      <el-menu-item index="/scheduledTasks">系统任务</el-menu-item>
       <el-menu-item class="logout">
         <el-button type="text" @click="handleLogout">登出</el-button>
       </el-menu-item>

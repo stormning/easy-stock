@@ -3,53 +3,57 @@ package com.slyak.es.service.impl;
 import com.slyak.es.domain.Task;
 import com.slyak.es.domain.TaskStatus;
 import com.slyak.es.repo.TaskRepository;
+import com.slyak.es.service.TaskContentMaker;
 import com.slyak.es.service.TaskService;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 
 import javax.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
 @Service
 @Transactional
-public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService<T>{
+public class TaskServiceImpl implements TaskService{
 
     @Autowired
-    private TaskRepository<T> taskRepository;
+    private TaskRepository taskRepository;
 
     @Autowired
     private TaskCompletionHandlerRegistry handlerRegistry;
 
     @Override
-    public Task<T> createTask(Task<T> task) {
-        return taskRepository.save(task);
+    public Task createTask(TaskContentMaker<?> contentMaker, Class<?> relClass, Long relId) {
+        Task task = new Task();
+        task.setContent(contentMaker.serialize());
+        task.setTitle(contentMaker.getTitle());
+        task.setRelatedEntityType(relClass.getName());
+        task.setRelatedEntityId(relId);
+        return saveTask(task);
     }
 
     @Override
-    public Task<T> saveTask(Task<T> task) {
+    public Task saveTask(Task task) {
         return taskRepository.save(task);
     }
 
     @Override
     public void deleteTask(Long taskId) {
-        Task<T> task = taskRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         taskRepository.delete(task);
     }
 
     @Override
-    public List<Task<T>> getAllTasks() {
+    public List<Task> getAllTasks() {
         return taskRepository.findAll();
     }
 
     @Override
-    public Task<T> getTaskById(Long taskId) {
+    public Task getTaskById(Long taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
     }
@@ -58,7 +62,7 @@ public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService
     @SneakyThrows
     @SuppressWarnings("unchecked")
     public void completeTask(Long taskId) {
-        Task<T> task = taskRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
 
         // mark the task as completed
@@ -67,8 +71,8 @@ public class TaskServiceImpl<T extends Persistable<Long>> implements TaskService
         taskRepository.save(task);
 
         // get the related entity type and call the completion handler
-        Class<T> entityType = (Class<T>) ClassUtils.forName(task.getRelatedEntityType(), ClassUtils.getDefaultClassLoader());
-        TaskCompletionHandler<T> handler = handlerRegistry.getHandler(entityType);
+        Class<?> entityType = ClassUtils.forName(task.getRelatedEntityType(), ClassUtils.getDefaultClassLoader());
+        TaskCompletionHandler handler = handlerRegistry.getHandler(entityType);
         if (handler != null) {
             handler.handleCompletion(task);
         }

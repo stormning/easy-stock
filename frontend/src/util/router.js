@@ -45,6 +45,11 @@ const router = new VueRouter({
             path: '/tasks',
             component: () => import('../pages/tasks.vue'),
             meta: { requiresAuth: true }
+        },
+        {
+            path: '/scheduledTasks',
+            component: () => import('../pages/scheduledTasks.vue'),
+            meta: { requiresAuth: true }
         }
     ]
 });
