@@ -1,7 +1,6 @@
 package com.slyak.es.domain;
 
 import lombok.Data;
-import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.Entity;

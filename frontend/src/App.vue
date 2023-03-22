@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="app">
     <el-menu default-active="plans" :router="true" mode="horizontal" v-if="isLoggedIn()">
-      <el-menu-item index="2-1">我的看板</el-menu-item>
+      <el-menu-item index="/board">我的看板</el-menu-item>
       <el-menu-item index="/plans">个股计划</el-menu-item>
       <el-menu-item index="/tasks">今日代办</el-menu-item>
       <el-menu-item index="/plates">策略管理</el-menu-item>
