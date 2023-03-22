@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class TaskCreator {
@@ -33,6 +34,7 @@ public class TaskCreator {
         List<Plan> plans = planService.queryUserPlans(null, null);
         for (Plan plan : plans) {
             Long id = plan.getId();
+            Optional<User> createdBy = plan.getCreatedBy();
             Stock stock = plan.getStock();
             BigDecimal fixedPrice = stock.getInfo().getFixedPrice();
             String code = stock.getCode();
@@ -52,7 +54,7 @@ public class TaskCreator {
                 if (planItem.getStatus() == PlanItemStatus.WAIT && buyRange.contains(price)) {
                     PlanServiceImpl.PlanItemTaskContent pitc
                             = new PlanServiceImpl.PlanItemTaskContent(stock.getName(), TradeType.BUY, price, planItem.getAmount());
-                    taskService.createTask(pitc, PlanItem.class, planItem.getId());
+                    taskService.createTask(pitc, PlanItem.class, planItem.getId(), createdBy.orElse(null));
                 }
 
                 if (planItem.getStatus() == PlanItemStatus.FINISH && sellRange.contains(price)) {

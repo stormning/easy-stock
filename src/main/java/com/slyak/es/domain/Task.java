@@ -1,7 +1,7 @@
 package com.slyak.es.domain;
 
 import lombok.Data;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import org.springframework.data.jpa.domain.AbstractAuditable;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -12,7 +12,7 @@ import java.util.Date;
 @Entity
 @Table(name = "task")
 @Data
-public class Task extends AbstractPersistable<Long> {
+public class Task extends AbstractAuditable<User, Long> {
 
     private String title;
 

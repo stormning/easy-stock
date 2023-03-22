@@ -1,10 +1,15 @@
 package com.slyak.es.service.impl;
 
+import com.slyak.es.config.SecurityUtils;
 import com.slyak.es.domain.Task;
 import com.slyak.es.domain.TaskStatus;
+import com.slyak.es.domain.User;
 import com.slyak.es.repo.TaskRepository;
+import com.slyak.es.repo.UserRepo;
 import com.slyak.es.service.TaskContentMaker;
 import com.slyak.es.service.TaskService;
+import com.slyak.es.service.UserService;
+import com.slyak.es.util.JpaUtil;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +21,6 @@ import java.util.Date;
 import java.util.List;
 
 @Service
-@Transactional
 public class TaskServiceImpl implements TaskService{
 
     @Autowired
@@ -26,21 +30,25 @@ public class TaskServiceImpl implements TaskService{
     private TaskCompletionHandlerRegistry handlerRegistry;
 
     @Override
-    public Task createTask(TaskContentMaker<?> contentMaker, Class<?> relClass, Long relId) {
+    @Transactional
+    public Task createTask(TaskContentMaker<?> contentMaker, Class<?> relClass, Long relId, User user) {
         Task task = new Task();
         task.setContent(contentMaker.serialize());
         task.setTitle(contentMaker.getTitle());
         task.setRelatedEntityType(relClass.getName());
         task.setRelatedEntityId(relId);
+        task.setCreatedBy(user);
         return saveTask(task);
     }
 
     @Override
+    @Transactional
     public Task saveTask(Task task) {
         return taskRepository.save(task);
     }
 
     @Override
+    @Transactional
     public void deleteTask(Long taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
@@ -48,8 +56,13 @@ public class TaskServiceImpl implements TaskService{
     }
 
     @Override
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    public List<Task> getUserTasks(TaskStatus status) {
+        Task task = new Task();
+        User user = SecurityUtils.getUser();
+        assert user != null;
+        task.setCreatedBy(user);
+        task.setStatus(status);
+        return taskRepository.findAll(JpaUtil.getQuerySpecification(task, null));
     }
 
     @Override
@@ -60,10 +73,9 @@ public class TaskServiceImpl implements TaskService{
 
     @Override
     @SneakyThrows
-    @SuppressWarnings("unchecked")
+    @Transactional
     public void completeTask(Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found with id " + taskId));
+        Task task = getTaskById(taskId);
 
         // mark the task as completed
         task.setStatus(TaskStatus.COMPLETED);
@@ -82,6 +94,15 @@ public class TaskServiceImpl implements TaskService{
     @Transactional
     public void clearAll() {
         taskRepository.deleteAll();
+    }
+
+    @Override
+    @Transactional
+    public void startTask(Long taskId) {
+        Task task = getTaskById(taskId);
+        // mark the task as in progress
+        task.setStatus(TaskStatus.IN_PROGRESS);
+        taskRepository.save(task);
     }
 }
 

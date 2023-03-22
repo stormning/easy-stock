@@ -18,8 +18,14 @@ public class TaskApiController<T extends Persistable<Long>> extends BaseControll
     private TaskService taskService;
 
     @GetMapping("/list")
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
+    public List<Task> getUserTasks(TaskStatus status) {
+        return taskService.getUserTasks(status);
+    }
+
+    @PostMapping("/start")
+    public Result start(Long id) {
+        taskService.startTask(id);
+        return ok();
     }
 
     @PostMapping("/complete")
