@@ -43,7 +43,7 @@ public class TaskCreator {
             BigDecimal low = mul(fixedPrice, -maxPercent);
             BigDecimal high = mul(fixedPrice, maxPercent);
 
-            Range<BigDecimal> buyRange = Range.closed(low, high);
+            Range<BigDecimal> buyRange = Range.closed(low, BigDecimal.valueOf(Integer.MAX_VALUE));
             Range<BigDecimal> sellRange = Range.closed(fixedPrice, high);
 
             List<PlanItem> planItems = planService.getPlanItems(id);
