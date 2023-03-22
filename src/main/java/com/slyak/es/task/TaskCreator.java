@@ -29,6 +29,7 @@ public class TaskCreator {
     @Scheduled(cron = "0 5 15 * * ?")
     @Transactional
     public void generateTasks() {
+        taskService.clearAll();
         List<Plan> plans = planService.queryUserPlans(null, null);
         for (Plan plan : plans) {
             Long id = plan.getId();
@@ -37,22 +38,24 @@ public class TaskCreator {
             String code = stock.getCode();
             int maxPercent = is20Percent(code) ? 20 : 10;
 
-            BigDecimal high = mul(fixedPrice, maxPercent);
             BigDecimal low = mul(fixedPrice, -maxPercent);
+            BigDecimal high = mul(fixedPrice, maxPercent);
 
-            Range<BigDecimal> range = Range.closed(low, high);
+            Range<BigDecimal> buyRange = Range.closed(low, high);
+            Range<BigDecimal> sellRange = Range.closed(fixedPrice, high);
 
             List<PlanItem> planItems = planService.getPlanItems(id);
             for (PlanItem planItem : planItems) {
                 BigDecimal price = planItem.getPrice();
 
                 //buy
-                if (planItem.getStatus() == PlanItemStatus.WAIT && range.contains(price)) {
-                    PlanServiceImpl.PlanItemTaskContent pitc = new PlanServiceImpl.PlanItemTaskContent(TradeType.BUY, price, planItem.getAmount());
+                if (planItem.getStatus() == PlanItemStatus.WAIT && buyRange.contains(price)) {
+                    PlanServiceImpl.PlanItemTaskContent pitc
+                            = new PlanServiceImpl.PlanItemTaskContent(stock.getName(), TradeType.BUY, price, planItem.getAmount());
                     taskService.createTask(pitc, PlanItem.class, planItem.getId());
                 }
 
-                if (planItem.getStatus() == PlanItemStatus.FINISH && range.contains(price)) {
+                if (planItem.getStatus() == PlanItemStatus.FINISH && sellRange.contains(price)) {
                     //TODO sell 逻辑
                 }
             }

@@ -1,11 +1,11 @@
 <template>
   <div>
     <el-table :data="tasks" style="width: 100%">
-      <el-table-column prop="id" label="ID" width="80"></el-table-column>
+      <el-table-column prop="id" label="ID" width="60"></el-table-column>
       <el-table-column prop="title" label="标题"></el-table-column>
-      <el-table-column prop="description" label="描述"></el-table-column>
-      <el-table-column prop="relatedEntity" label="关联实体"></el-table-column>
-      <el-table-column prop="status" label="状态">
+<!--      <el-table-column prop="description" label="描述"></el-table-column>-->
+<!--      <el-table-column prop="relatedEntity" label="关联实体"></el-table-column>-->
+      <el-table-column prop="status" label="状态" width="100">
         <template slot-scope="{ row }">
           <el-tag :type="getStatusTagType(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
         </template>
@@ -36,7 +36,7 @@ export default {
     },
     completeTask(taskId) {
       const that = this
-      this.$http.get(`/api/task/complete`).then(res=>{
+      this.$http.post(`/api/task/complete`, {id: taskId}).then(res=>{
         that.getTasks()
       })
     },

@@ -17,4 +17,6 @@ public interface TaskService {
     Task getTaskById(Long taskId);
 
     void completeTask(Long taskId);
+
+    void clearAll();
 }

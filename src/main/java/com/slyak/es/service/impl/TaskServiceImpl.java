@@ -77,5 +77,11 @@ public class TaskServiceImpl implements TaskService{
             handler.handleCompletion(task);
         }
     }
+
+    @Override
+    @Transactional
+    public void clearAll() {
+        taskRepository.deleteAll();
+    }
 }
 

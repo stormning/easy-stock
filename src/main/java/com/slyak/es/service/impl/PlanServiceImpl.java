@@ -220,10 +220,11 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
         private String stock;
 
 
-        public PlanItemTaskContent(TradeType tradeType, BigDecimal price, long amount) {
+        public PlanItemTaskContent(String stock ,TradeType tradeType, BigDecimal price, long amount) {
             this.tradeType = tradeType;
             this.price = price;
             this.amount = amount;
+            this.stock = stock;
         }
 
         @Override
