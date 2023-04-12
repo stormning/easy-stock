@@ -1,4 +1,4 @@
-package com.slyak.es.config;
+package com.slyak.es.bean;
 
 import lombok.Data;
 

@@ -3,6 +3,7 @@ package com.slyak.es.domain;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.jpa.domain.AbstractAuditable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -22,12 +23,40 @@ public class PlanItem extends AbstractAuditable<User, Long> {
 
     private long amount;
 
-    private BigDecimal price;
+    private long realAmount;
 
     private BigDecimal cost;
+
+    private BigDecimal realCost;
+
+    private BigDecimal price;
 
     private PlanItemStatus status = PlanItemStatus.WAIT;
 
     @Column(length = 100)
     private String remark;
+
+
+    @Transient
+    public PlanItem copy() {
+        PlanItem planItem = new PlanItem();
+        BeanUtils.copyProperties(this, planItem);
+        return planItem;
+    }
+
+    @Transient
+    public long getLeftAmount() {
+        return amount - realAmount;
+    }
+    @Transient
+    public void subtract(long subtractAmount) {
+        this.realAmount = this.realAmount - subtractAmount;
+        this.realCost = this.realCost.subtract(price.multiply(BigDecimal.valueOf(subtractAmount)));
+    }
+
+    @Transient
+    public void add(long addAmount) {
+        this.realAmount = this.realAmount + addAmount;
+        this.realCost = this.realCost.add(price.multiply(BigDecimal.valueOf(addAmount)));
+    }
 }

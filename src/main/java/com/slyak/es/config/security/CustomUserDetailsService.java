@@ -1,4 +1,4 @@
-package com.slyak.es.config;
+package com.slyak.es.config.security;
 
 import com.slyak.es.domain.User;
 import com.slyak.es.repo.UserRepo;

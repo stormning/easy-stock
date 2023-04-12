@@ -43,7 +43,7 @@ public class StockInfo {
      */
     public BigDecimal getFixedPrice() {
         //收盘后则取当前价格作为收盘价，否则取昨日收盘价
-        if (DateUtils.getFragmentInDays(new Date(), Calendar.HOUR_OF_DAY) >= 15){
+        if (DateUtils.getFragmentInHours(new Date(), Calendar.DATE) >= 15){
             return price;
         } else {
             return yesPrice;
@@ -63,4 +63,5 @@ public class StockInfo {
         this.yesPrice = new BigDecimal(split[4]);
         this.toPriceStart = new BigDecimal(split[5]);
     }
+
 }

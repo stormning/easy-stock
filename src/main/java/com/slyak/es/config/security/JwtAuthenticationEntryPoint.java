@@ -1,4 +1,4 @@
-package com.slyak.es.config;
+package com.slyak.es.config.security;
 
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;

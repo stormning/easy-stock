@@ -47,7 +47,7 @@ public class Trade extends AbstractAuditable<User, Long> {
     public Trade init(Plan plan, BigDecimal commission, TradeType type) {
         Assert.notNull(price, "Price must be set");
         this.type = type;
-//        this.stockId = plan.getStock().getId();
+        this.stockId = plan.getStock().getId();
         this.planId = plan.getId();
         this.turnover = Constants.trade(getTotalPrice(), commission, type);
         return this;

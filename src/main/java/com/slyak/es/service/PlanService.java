@@ -1,9 +1,6 @@
 package com.slyak.es.service;
 
-import com.slyak.es.domain.Plan;
-import com.slyak.es.domain.PlanItem;
-import com.slyak.es.domain.Stock;
-import com.slyak.es.domain.User;
+import com.slyak.es.domain.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -38,4 +35,6 @@ public interface PlanService {
     void deletePlanItems(Long id);
 
     void sellItem(Long itemId, BigDecimal price);
+
+    SellStrategy getSellStrategy(Long planId);
 }

@@ -1,6 +1,6 @@
 package com.slyak.es.controller;
 
-import com.slyak.es.config.ScheduledTaskService;
+import com.slyak.es.service.ScheduledTaskService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

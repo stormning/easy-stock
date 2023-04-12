@@ -1,7 +1,7 @@
 package com.slyak.es.controller;
 
-import com.slyak.es.config.JwtTokenProvider;
-import com.slyak.es.config.LoginRequest;
+import com.slyak.es.bean.LoginRequest;
+import com.slyak.es.config.security.JwtTokenProvider;
 import com.slyak.es.service.UserRegistrationRequest;
 import com.slyak.es.service.UserService;
 import lombok.Data;

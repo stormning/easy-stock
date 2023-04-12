@@ -1,5 +1,6 @@
 package com.slyak.es.config;
 
+import com.slyak.es.config.security.UserDetailsImpl;
 import com.slyak.es.domain.User;
 import com.slyak.es.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;

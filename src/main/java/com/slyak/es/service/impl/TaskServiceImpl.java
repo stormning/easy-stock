@@ -1,14 +1,12 @@
 package com.slyak.es.service.impl;
 
-import com.slyak.es.config.SecurityUtils;
+import com.slyak.es.config.security.SecurityUtils;
 import com.slyak.es.domain.Task;
 import com.slyak.es.domain.TaskStatus;
 import com.slyak.es.domain.User;
 import com.slyak.es.repo.TaskRepository;
-import com.slyak.es.repo.UserRepo;
 import com.slyak.es.service.TaskContentMaker;
 import com.slyak.es.service.TaskService;
-import com.slyak.es.service.UserService;
 import com.slyak.es.util.JpaUtil;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;

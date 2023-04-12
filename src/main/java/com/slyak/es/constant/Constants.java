@@ -17,6 +17,8 @@ public class Constants {
 
     private static final BigDecimal MIN_FEE = BigDecimal.valueOf(5);
 
+    public static final BigDecimal GOLDEN_PERCENT = new BigDecimal("0.618");
+
     /**
      * 计算交易金额
      *

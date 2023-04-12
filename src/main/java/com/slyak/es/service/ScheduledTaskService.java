@@ -1,6 +1,7 @@
-package com.slyak.es.config;
+package com.slyak.es.service;
 
 import com.google.common.collect.Maps;
+import com.slyak.es.bean.TaskInfo;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.AnnotationUtils;

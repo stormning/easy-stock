@@ -2,66 +2,77 @@ package com.slyak.es.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.slyak.es.config.SecurityUtils;
+import com.google.common.collect.Maps;
+import com.slyak.es.config.security.SecurityUtils;
 import com.slyak.es.constant.Constants;
 import com.slyak.es.domain.*;
 import com.slyak.es.hibernate.assembler.EntityAssemblers;
 import com.slyak.es.repo.PlanItemRepo;
 import com.slyak.es.repo.PlanRepo;
+import com.slyak.es.repo.PlanSellStrategyRepo;
 import com.slyak.es.repo.TradeRepo;
-import com.slyak.es.service.PlanService;
-import com.slyak.es.service.StockService;
-import com.slyak.es.service.TaskContentMaker;
+import com.slyak.es.service.*;
 import com.slyak.es.util.JpaUtil;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class PlanServiceImpl implements PlanService, TaskCompletionHandler, InitializingBean {
+public class PlanServiceImpl implements PlanService, TaskCompletionHandler, InitializingBean, ApplicationContextAware {
 
     private final PlanRepo planRepo;
 
     private final PlanItemRepo planItemRepo;
 
-    private TradeRepo tradeRepo;
+    private final TradeRepo tradeRepo;
 
     private final StockService stockService;
 
     private final TaskCompletionHandlerRegistry registry;
 
+    private final PlanSellStrategyRepo planSellStrategyRepo;
+    private ApplicationContext applicationContext;
+
     @Autowired
-    public PlanServiceImpl(PlanRepo planRepo, PlanItemRepo planItemRepo, TradeRepo tradeRepo, StockService stockService, TaskCompletionHandlerRegistry registry) {
+    public PlanServiceImpl(PlanRepo planRepo, PlanItemRepo planItemRepo, TradeRepo tradeRepo, StockService stockService, TaskCompletionHandlerRegistry registry, PlanSellStrategyRepo planSellStrategyRepo) {
         this.planRepo = planRepo;
         this.planItemRepo = planItemRepo;
         this.tradeRepo = tradeRepo;
         this.stockService = stockService;
         this.registry = registry;
+        this.planSellStrategyRepo = planSellStrategyRepo;
     }
 
     @Override
     public Plan getById(Long id) {
-        Optional<Plan> byId = planRepo.findById(id);
-        if (byId.isPresent()) {
-            Plan plan = byId.get();
+        Plan plan = getByIdInternal(id);
+        if (plan != null) {
             EntityAssemblers entityAssemblers = EntityAssemblers.newInstance();
             entityAssemblers.assemble(plan.getStock());
-            return plan;
-        } else {
-            return null;
         }
+        return plan;
+    }
+
+    private Plan getByIdInternal(Long id){
+        return planRepo.findById(id).orElse(null);
     }
 
     @Override
@@ -207,55 +218,22 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
         }
     }
 
-    @NoArgsConstructor
-    @Data
-    public static class PlanItemTaskContent implements TaskContentMaker<PlanItemTaskContent> {
-
-        private TradeType tradeType;
-
-        private BigDecimal price;
-
-        private long amount;
-
-        private String stock;
-
-
-        public PlanItemTaskContent(String stock ,TradeType tradeType, BigDecimal price, long amount) {
-            this.tradeType = tradeType;
-            this.price = price;
-            this.amount = amount;
-            this.stock = stock;
-        }
-
-        @Override
-        public PlanItemTaskContent deserialize(String content) {
-            return JSON.parseObject(content, this.getClass());
-        }
-
-        @Override
-        public String serialize() {
-            return JSON.toJSONString(this);
-        }
-
-        @Override
-        public String getTitle() {
-            return "【" + stock + "】" + "单价：" + price.toString() + "，" + tradeType.getTitle() + "：" + amount + "股";
-        }
-    }
-
-
     @Override
     @Transactional
     public void handleCompletion(Task task) {
         String content = task.getContent();
-        PlanItemTaskContent tc = JSON.parseObject(content, PlanItemTaskContent.class);
+        TradeTaskContent tc = JSON.parseObject(content, TradeTaskContent.class);
         TradeType tradeType = tc.getTradeType();
         BigDecimal price = tc.getPrice();
-        Long itemId = task.getRelatedEntityId();
+        Long id = task.getRelatedEntityId();
         if (tradeType == TradeType.BUY) {
-            finishItem(itemId);
+            //TODO add trade of type buy
+            finishItem(id);
         } else {
-            sellItem(itemId, price);
+            //plan id
+            Plan plan = getById(id);
+            //TODO add trade of type sell
+            sellItem(id, price);
         }
     }
 
@@ -263,7 +241,7 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
     @Transactional
     public void sellItem(Long itemId, BigDecimal price) {
         Optional<PlanItem> itemOptional = planItemRepo.findById(itemId);
-        if (itemOptional.isPresent()){
+        if (itemOptional.isPresent()) {
             PlanItem planItem = itemOptional.get();
             planItem.setStatus(PlanItemStatus.WAIT);
             //减去
@@ -277,8 +255,31 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
         }
     }
 
+    private PlanSellStrategy defaultSellStrategy = new PlanSellStrategy();
+
+    @Override
+    @SneakyThrows
+    public SellStrategy getSellStrategy(Long planId) {
+        PlanSellStrategy pss = planSellStrategyRepo.findByPlanId(planId);
+        if (pss == null) {
+            return null;
+        }
+        Class<?> aClass = ClassUtils.forName(pss.getClassName(), ClassUtils.getDefaultClassLoader());
+        SellStrategy ss = (SellStrategy) ConstructorUtils.invokeConstructor(aClass);
+        Map<String, String> params = Maps.newHashMap(pss.getParams());
+        SellStrategy sellStrategy = ss.init(new StrategyArgs(planId, params));
+        applicationContext.getAutowireCapableBeanFactory().autowireBean(sellStrategy);
+        return sellStrategy;
+    }
+
     @Override
     public void afterPropertiesSet() {
         registry.registerHandler(PlanItem.class, this);
+        registry.registerHandler(Plan.class, this);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

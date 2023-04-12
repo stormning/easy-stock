@@ -4,8 +4,11 @@ package com.slyak.es.task;
 import com.google.common.collect.Range;
 import com.slyak.es.domain.*;
 import com.slyak.es.service.PlanService;
+import com.slyak.es.service.SellStrategy;
 import com.slyak.es.service.TaskService;
+import com.slyak.es.service.TradeTaskContent;
 import com.slyak.es.service.impl.PlanServiceImpl;
+import lombok.SneakyThrows;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class TaskCreator {
 
     @Scheduled(cron = "0 5 15 * * ?")
     @Transactional
+    @SneakyThrows
     public void generateTasks() {
         taskService.clearAll();
         List<Plan> plans = planService.queryUserPlans(null, null);
@@ -41,30 +45,37 @@ public class TaskCreator {
             int maxPercent = is20Percent(code) ? 20 : 10;
 
             BigDecimal low = mul(fixedPrice, -maxPercent);
-            BigDecimal high = mul(fixedPrice, maxPercent);
-
             Range<BigDecimal> buyRange = Range.closed(low, BigDecimal.valueOf(Integer.MAX_VALUE));
-            Range<BigDecimal> sellRange = Range.closed(fixedPrice, high);
-
             List<PlanItem> planItems = planService.getPlanItems(id);
+
+            BigDecimal lowestItemPrice = BigDecimal.ZERO;
             for (PlanItem planItem : planItems) {
                 BigDecimal price = planItem.getPrice();
-
+                PlanItemStatus status = planItem.getStatus();
                 //buy
-                if (planItem.getStatus() == PlanItemStatus.WAIT && buyRange.contains(price)) {
-                    PlanServiceImpl.PlanItemTaskContent pitc
-                            = new PlanServiceImpl.PlanItemTaskContent(stock.getName(), TradeType.BUY, price, planItem.getAmount());
-                    taskService.createTask(pitc, PlanItem.class, planItem.getId(), createdBy.orElse(null));
+                if (PlanItemStatus.BUY_STATUS.contains(status) && buyRange.contains(price)) {
+                    long amountGap = planItem.getAmount() - planItem.getRealAmount();
+                    if (amountGap > 0) {
+                        TradeTaskContent ttc = new TradeTaskContent(stock.getName(), TradeType.BUY, price, planItem.getAmount());
+                        taskService.createTask(ttc, PlanItem.class, planItem.getId(), createdBy.orElse(null));
+                    }
                 }
+            }
 
-                if (planItem.getStatus() == PlanItemStatus.FINISH && sellRange.contains(price)) {
-                    //TODO sell 逻辑
+            //min(plan avgPrice, last finished or part_finished item's price)
+            //sell 提醒
+            SellStrategy sellStrategy = planService.getSellStrategy(plan.getId());
+            if (sellStrategy != null) {
+                List<PriceAndAmount> pps = sellStrategy.generate();
+                for (PriceAndAmount pp : pps) {
+                    TradeTaskContent ttc = new TradeTaskContent(stock.getName(), TradeType.SELL, pp.getSellPrice(), pp.getSellAmount());
+                    taskService.createTask(ttc, Plan.class, plan.getId(), createdBy.orElse(null));
                 }
             }
         }
-
         System.out.println("generateTasks generateTasks generateTasks generateTasks");
     }
+
 
     private boolean is20Percent(String code) {
         return code.startsWith("3");

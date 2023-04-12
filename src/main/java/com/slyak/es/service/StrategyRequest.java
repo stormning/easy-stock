@@ -14,7 +14,7 @@ public class StrategyRequest {
 
     Map<String, String> args;
 
-    String stockCode;
+    Long planId;
 
     /**
      * 起手建仓金额
@@ -31,6 +31,6 @@ public class StrategyRequest {
         Class<?> aClass = ClassUtils.forName(className, this.getClass().getClassLoader());
         Constructor<?> constructor = aClass.getConstructor();
         PriceStrategy priceStrategy = (PriceStrategy) constructor.newInstance();
-        return priceStrategy.init(new StrategyArgs(stockCode, args));
+        return priceStrategy.init(new StrategyArgs(planId, args));
     }
 }

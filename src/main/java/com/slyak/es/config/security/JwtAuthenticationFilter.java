@@ -1,4 +1,4 @@
-package com.slyak.es.config;
+package com.slyak.es.config.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

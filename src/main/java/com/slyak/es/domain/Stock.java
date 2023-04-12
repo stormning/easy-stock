@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.AbstractPersistable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import java.math.BigDecimal;
 
 @Data
 @Accessors(chain = true)
@@ -25,4 +26,10 @@ public class Stock extends AbstractPersistable<Long> {
 
     @Transient
     private StockInfo info;
+
+
+    @Transient
+    public BigDecimal getMaxPercent(){
+        return code.startsWith("3") ? BigDecimal.valueOf(20) : BigDecimal.valueOf(10);
+    }
 }

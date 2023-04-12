@@ -7,12 +7,16 @@ import java.util.Map;
 
 public class StrategyArgs {
 
-    private final String stockCode;
+    private final Long planId;
     private Map<String, String> args;
 
-    public StrategyArgs(String stockCode, Map<String, String> args) {
-        this.stockCode = stockCode;
+    public StrategyArgs(Long planId, Map<String, String> args) {
+        this.planId = planId;
         this.args = args;
+    }
+
+    public Long getPlanId() {
+        return planId;
     }
 
     public BigDecimal getBigDecimal(String name) {

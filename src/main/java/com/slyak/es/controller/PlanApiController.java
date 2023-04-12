@@ -1,6 +1,6 @@
 package com.slyak.es.controller;
 
-import com.slyak.es.config.SecurityUtils;
+import com.slyak.es.config.security.SecurityUtils;
 import com.slyak.es.domain.PlanItem;
 import com.slyak.es.domain.Stock;
 import com.slyak.es.service.PlanService;
@@ -58,10 +58,11 @@ public class PlanApiController extends BaseController {
 
     @PostMapping("/genItemsByStrategy")
     public Result genItemsByStrategy(@RequestBody StrategyRequest request, Long id) {
+        request.setPlanId(id);
         PriceStrategy ss = request.initStrategy();
         BigDecimal startCost = request.getStartCost();
         BigDecimal supplement = request.getSupplement();
-        List<PlanItem> items = planService.genPlanItems(id, ss.genPriceSteps(), startCost, supplement);
+        List<PlanItem> items = planService.genPlanItems(id, ss.generate(), startCost, supplement);
         return ok(items);
     }
 

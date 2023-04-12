@@ -1,4 +1,4 @@
-package com.slyak.es.config;
+package com.slyak.es.config.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.slyak.es.domain.User;

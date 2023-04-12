@@ -29,6 +29,11 @@ public class SimplePriceStepStrategy implements PriceStrategy {
         return this;
     }
 
+    @Override
+    public List<BigDecimal> generate() {
+        return priceSteps;
+    }
+
     private void init() {
         int count = BigDecimal.valueOf(100).divide(gradient, 0, RoundingMode.HALF_UP).intValue();
         BigDecimal nextPrice = startPrice;
@@ -37,10 +42,5 @@ public class SimplePriceStepStrategy implements PriceStrategy {
             priceSteps.add(nextPrice);
             nextPrice = nextPrice.add(step);
         }
-    }
-
-    @Override
-    public List<BigDecimal> genPriceSteps() {
-        return priceSteps;
     }
 }
