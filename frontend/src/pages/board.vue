@@ -22,7 +22,7 @@ export default {
         {
           name: '股票卖出提醒',
           description: '股票卖出策略和仓位管理之间的关系',
-          status: '开发中',
+          status: '已完成',
           assignee: 'stormning',
           deadline: '2023-03-30'
         },
@@ -31,7 +31,7 @@ export default {
           description: '板块估值体系和机会发掘',
           status: '待开发',
           assignee: 'stormning',
-          deadline: '2023-04-30'
+          deadline: '2023-05-10'
         }
       ]
     }
