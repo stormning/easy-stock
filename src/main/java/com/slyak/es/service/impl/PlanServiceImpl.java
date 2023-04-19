@@ -12,6 +12,7 @@ import com.slyak.es.repo.PlanRepo;
 import com.slyak.es.repo.PlanSellStrategyRepo;
 import com.slyak.es.repo.TradeRepo;
 import com.slyak.es.service.*;
+import com.slyak.es.service.strategy.TargetPriceStrategy;
 import com.slyak.es.util.JpaUtil;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -26,10 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,7 +72,7 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
         return plan;
     }
 
-    private Plan getByIdInternal(Long id){
+    private Plan getByIdInternal(Long id) {
         return planRepo.findById(id).orElse(null);
     }
 
@@ -184,7 +185,6 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
             Assert.isTrue(planItem.getStatus() == PlanItemStatus.WAIT, "已完成的项不允许删除");
             planItemRepo.delete(planItem);
         }
-
     }
 
     @Override
@@ -194,16 +194,28 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
         if (planItemOptional.isPresent()) {
             PlanItem planItem = planItemOptional.get();
             planItem.setStatus(PlanItemStatus.FINISH);
-            planItemRepo.save(planItem);
-
-            Long planId = planItem.getPlanId();
-            Plan plan = getById(planId);
-            //累加
-            plan.setAmount(plan.getAmount() + planItem.getAmount());
-            plan.setCost(plan.getCost().add(planItem.getCost()));
-            planRepo.save(plan);
-
+            //TODO amount as an argument
+            //realAmount
+            planItem.setRealAmount(planItem.getAmount());
+            savePlanItem(planItem);
+            restPlanSummary(planItem.getPlanId());
         }
+    }
+
+    private void restPlanSummary(Long planId) {
+        Plan plan = planRepo.getReferenceById(planId);
+        List<PlanItem> items = planItemRepo.findByPlanId(planId);
+        long amount = 0;
+        BigDecimal cost = BigDecimal.ZERO;
+        for (PlanItem item : items) {
+            if (PlanItemStatus.SELL_STATUS.contains(item.getStatus())) {
+                amount += item.getRealAmount();
+                cost = cost.add(item.getCost());
+            }
+        }
+        plan.setAmount(amount);
+        plan.setCost(cost);
+        planRepo.save(plan);
     }
 
     @Override
@@ -220,56 +232,74 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
 
     @Override
     @Transactional
-    public void handleCompletion(Task task) {
-        String content = task.getContent();
-        TradeTaskContent tc = JSON.parseObject(content, TradeTaskContent.class);
-        TradeType tradeType = tc.getTradeType();
-        BigDecimal price = tc.getPrice();
-        Long id = task.getRelatedEntityId();
-        if (tradeType == TradeType.BUY) {
-            //TODO add trade of type buy
-            finishItem(id);
-        } else {
-            //plan id
-            Plan plan = getById(id);
-            //TODO add trade of type sell
-            sellItem(id, price);
+    public void sellPlanItem(Long planId, long amount) {
+        List<PlanItem> items = planItemRepo.findByPlanId(planId).stream()
+                .filter(planItem -> PlanItemStatus.SELL_STATUS.contains(planItem.getStatus()))
+                .sorted(Comparator.comparing(PlanItem::getPrice))
+                .collect(Collectors.toList());
+
+        for (PlanItem item : items) {
+            PlanItemStatus status = item.getStatus();
+            if (PlanItemStatus.SELL_STATUS.contains(status)) {
+                long sellAmount = Math.min(amount, item.getRealAmount());
+                long left = item.getRealAmount() - sellAmount;
+                BigDecimal income = getCostWithFee(sellAmount, item.getPrice(), TradeType.SELL);
+                item.setCost(item.getCost().subtract(income));
+                item.setRealAmount(left);
+                if (left == 0) {
+                    item.setStatus(PlanItemStatus.WAIT);
+                } else {
+                    item.setStatus(PlanItemStatus.PART_FINISH);
+                }
+                amount = amount - sellAmount;
+                planItemRepo.save(item);
+                if (amount == 0) {
+                    break;
+                }
+            } else {
+                break;
+            }
         }
     }
 
     @Override
     @Transactional
-    public void sellItem(Long itemId, BigDecimal price) {
-        Optional<PlanItem> itemOptional = planItemRepo.findById(itemId);
-        if (itemOptional.isPresent()) {
-            PlanItem planItem = itemOptional.get();
-            planItem.setStatus(PlanItemStatus.WAIT);
-            //减去
-            Long planId = planItem.getPlanId();
-            Plan plan = getById(planId);
-            long amount = planItem.getAmount();
-            plan.setAmount(plan.getAmount() - amount);
-            BigDecimal income = getCostWithFee(amount, price, TradeType.SELL);
-            plan.setCost(plan.getCost().subtract(income));
-            planRepo.save(plan);
+    public void handleCompletion(Task task) {
+        String content = task.getContent();
+        TradeTaskContent tc = JSON.parseObject(content, TradeTaskContent.class);
+        TradeType tradeType = tc.getTradeType();
+        Long id = task.getRelatedEntityId();
+        if (tradeType == TradeType.BUY) {
+            //TODO add trade of type buy
+            finishItem(id);
+        } else {
+            //sell
+            //plan id
+            BigDecimal price = tc.getPrice();
+            long amount = tc.getAmount();
+            sellPlanItem(id, amount);
         }
     }
 
-    private PlanSellStrategy defaultSellStrategy = new PlanSellStrategy();
+    private static final PlanSellStrategy DEFAULT_PLAN_SELL_STRATEGY = new PlanSellStrategy();
+
+    static {
+        DEFAULT_PLAN_SELL_STRATEGY.setClassName(TargetPriceStrategy.class.getName());
+    }
 
     @Override
     @SneakyThrows
     public SellStrategy getSellStrategy(Long planId) {
         PlanSellStrategy pss = planSellStrategyRepo.findByPlanId(planId);
         if (pss == null) {
-            return null;
+            pss = DEFAULT_PLAN_SELL_STRATEGY;
         }
         Class<?> aClass = ClassUtils.forName(pss.getClassName(), ClassUtils.getDefaultClassLoader());
         SellStrategy ss = (SellStrategy) ConstructorUtils.invokeConstructor(aClass);
         Map<String, String> params = Maps.newHashMap(pss.getParams());
-        SellStrategy sellStrategy = ss.init(new StrategyArgs(planId, params));
-        applicationContext.getAutowireCapableBeanFactory().autowireBean(sellStrategy);
-        return sellStrategy;
+        applicationContext.getAutowireCapableBeanFactory().autowireBean(ss);
+        ss.init(new StrategyArgs(planId, params));
+        return ss;
     }
 
     @Override

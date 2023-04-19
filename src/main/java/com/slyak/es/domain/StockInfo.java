@@ -1,6 +1,5 @@
 package com.slyak.es.domain;
 
-import com.google.common.collect.Range;
 import com.slyak.es.util.DateUtils;
 import com.slyak.es.util.StringUtils;
 import lombok.Data;
@@ -43,7 +42,7 @@ public class StockInfo {
      */
     public BigDecimal getFixedPrice() {
         //收盘后则取当前价格作为收盘价，否则取昨日收盘价
-        if (DateUtils.getFragmentInHours(new Date(), Calendar.DATE) >= 15){
+        if (isMarketClosed()) {
             return price;
         } else {
             return yesPrice;
@@ -64,4 +63,9 @@ public class StockInfo {
         this.toPriceStart = new BigDecimal(split[5]);
     }
 
+    //是否收盘
+    private boolean isMarketClosed() {
+        Date now = new Date();
+        return !DateUtils.isWeekday(now) || DateUtils.getFragmentInHours(now, Calendar.DATE) >= 15;
+    }
 }

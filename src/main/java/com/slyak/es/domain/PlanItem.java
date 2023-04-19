@@ -27,8 +27,6 @@ public class PlanItem extends AbstractAuditable<User, Long> {
 
     private BigDecimal cost;
 
-    private BigDecimal realCost;
-
     private BigDecimal price;
 
     private PlanItemStatus status = PlanItemStatus.WAIT;
@@ -43,20 +41,15 @@ public class PlanItem extends AbstractAuditable<User, Long> {
         BeanUtils.copyProperties(this, planItem);
         return planItem;
     }
-
-    @Transient
-    public long getLeftAmount() {
-        return amount - realAmount;
-    }
     @Transient
     public void subtract(long subtractAmount) {
         this.realAmount = this.realAmount - subtractAmount;
-        this.realCost = this.realCost.subtract(price.multiply(BigDecimal.valueOf(subtractAmount)));
+        this.cost = this.cost.subtract(price.multiply(BigDecimal.valueOf(subtractAmount)));
     }
 
     @Transient
     public void add(long addAmount) {
         this.realAmount = this.realAmount + addAmount;
-        this.realCost = this.realCost.add(price.multiply(BigDecimal.valueOf(addAmount)));
+        this.cost = this.cost.add(price.multiply(BigDecimal.valueOf(addAmount)));
     }
 }

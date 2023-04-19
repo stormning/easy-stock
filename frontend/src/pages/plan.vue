@@ -34,15 +34,17 @@
       <el-table-column
           label="状态">
         <template slot-scope="scope">
-          {{ scope.row.status === 'WAIT' ? '待完成' : '已完成' }}
+          {{ scope.row.status === 'WAIT' ? '待完成' : (scope.row.status === 'PART_FINISH'?'部成(缺'+(scope.row.amount- scope.row.realAmount)+')':'已完成') }}
         </template>
       </el-table-column>
       <el-table-column
           fixed="right"
           label="操作">
         <template slot-scope="scope">
+          <template v-if="scope.row.status==='WAIT'||scope.row.status==='PART_FINISH'">
+          <el-button @click="finishItem(scope.row)" type="text" size="small">完成</el-button>
+          </template>
           <template v-if="scope.row.status==='WAIT'">
-            <el-button @click="finishItem(scope.row)" type="text" size="small">完成</el-button>
             <el-button @click="editItem(scope.row)" type="text" size="small">编辑</el-button>
             <el-button @click="deleteItem(scope.row)" type="text" size="small">删除</el-button>
           </template>
@@ -132,11 +134,11 @@
 <style lang="scss">
 @import '../assets/css/core.scss';
 
-.el-table .wait {
+.el-table .wait,.el-table .part_finish {
   background: #DFF6FC;
 }
 
-.el-table .finished {
+.el-table .finish {
   background: #F2F6FC;
 }
 

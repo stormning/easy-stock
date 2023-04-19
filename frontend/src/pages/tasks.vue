@@ -7,7 +7,11 @@
     </el-tabs>
     <el-table :data="tasks" style="width: 100%">
       <el-table-column prop="id" label="ID" width="60"></el-table-column>
-      <el-table-column prop="title" label="标题"></el-table-column>
+      <el-table-column label="标题">
+        <template slot-scope="scope">
+          <div v-html="scope.row.title"></div>
+        </template>
+      </el-table-column>
 <!--      <el-table-column prop="description" label="描述"></el-table-column>-->
 <!--      <el-table-column prop="relatedEntity" label="关联实体"></el-table-column>-->
       <el-table-column prop="status" label="状态" width="100">

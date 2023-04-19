@@ -73,4 +73,21 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils {
         }
         throw new IllegalArgumentException("Can not cast to Date, value : " + value);
     }
+
+    public static boolean isWeekday(Date date) {
+        // 判断日期是否是周末
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+            return false;
+        }
+        // 判断日期是否是节假日
+        return !isHoliday(date);
+    }
+
+    public static boolean isHoliday(Date date) {
+        // TODO: 实现节假日判断逻辑，可以使用 jollyday 等库
+        return false;
+    }
 }

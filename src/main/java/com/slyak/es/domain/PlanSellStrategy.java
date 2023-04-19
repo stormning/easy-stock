@@ -1,5 +1,6 @@
 package com.slyak.es.domain;
 
+import com.google.common.collect.Maps;
 import com.slyak.es.service.JsonConverter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,5 +26,5 @@ public class PlanSellStrategy extends AbstractAuditable<User, Long> {
     private String className;
 
     @Convert(converter = JsonConverter.class)
-    private Map<String, String> params;
+    private Map<String, String> params = Maps.newHashMap();
 }

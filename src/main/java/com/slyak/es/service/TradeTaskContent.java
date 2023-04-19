@@ -41,6 +41,10 @@ public class TradeTaskContent implements TaskContentMaker<TradeTaskContent> {
 
     @Override
     public String getTitle() {
-        return "【" + stock + "】" + "单价：" + price.toString() + "，" + tradeType.getTitle() + "：" + amount + "股";
+        return "【" + stock + "】" + "单价：" + price.toString() + "，" + tradeTypeTitle(tradeType) + "：" + amount + "股";
+    }
+
+    private String tradeTypeTitle(TradeType tradeType){
+        return "<b style='color:" + (tradeType == TradeType.BUY ? "blue" : "red") + "'>" + tradeType.getTitle() + "</b>";
     }
 }

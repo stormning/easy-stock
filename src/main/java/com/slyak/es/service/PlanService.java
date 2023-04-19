@@ -34,7 +34,7 @@ public interface PlanService {
 
     void deletePlanItems(Long id);
 
-    void sellItem(Long itemId, BigDecimal price);
+    void sellPlanItem(Long planId, long amount);
 
     SellStrategy getSellStrategy(Long planId);
 }

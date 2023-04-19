@@ -56,7 +56,7 @@ public class TaskCreator {
                 if (PlanItemStatus.BUY_STATUS.contains(status) && buyRange.contains(price)) {
                     long amountGap = planItem.getAmount() - planItem.getRealAmount();
                     if (amountGap > 0) {
-                        TradeTaskContent ttc = new TradeTaskContent(stock.getName(), TradeType.BUY, price, planItem.getAmount());
+                        TradeTaskContent ttc = new TradeTaskContent(stock.getName(), TradeType.BUY, price, amountGap);
                         taskService.createTask(ttc, PlanItem.class, planItem.getId(), createdBy.orElse(null));
                     }
                 }

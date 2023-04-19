@@ -8,7 +8,7 @@ import static com.slyak.es.constant.Constants.GOLDEN_PERCENT;
 
 public interface PercentageSellStrategy extends SellStrategy {
     default BigDecimal getRise() {
-        return GOLDEN_PERCENT.multiply(BigDecimal.valueOf(100));
+        return GOLDEN_PERCENT.multiply(BigDecimal.valueOf(10));
     }
 
     default BigDecimal getSell() {

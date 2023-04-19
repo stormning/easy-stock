@@ -11,6 +11,8 @@ public interface PlanItemRepo extends JpaRepository<PlanItem, Long>, JpaSpecific
 
     List<PlanItem> findPlanItemsByPlanIdOrderByPriceDesc(Long id);
 
+    List<PlanItem> findByPlanId(Long id);
+
     @Modifying
     void deleteByPlanId(Long planId);
 }
