@@ -48,8 +48,10 @@
           label="持仓总成本">
       </el-table-column>
       <el-table-column
-          prop="win"
           label="盈亏">
+        <template slot-scope="scope">
+          <div v-html="getWinRemark(scope.row)"></div>
+        </template>
       </el-table-column>
       <el-table-column
           fixed="right"
@@ -116,6 +118,11 @@ export default {
       this.$http.get(`/api/plan/list?stockCode=${this.stockCode}`).then(res=>{
         that.plans = res.data
       })
+    },
+    getWinRemark(row) {
+      let w = row.win
+      const color = w<0? 'green': 'red'
+      return `<span style="color: ${color}">${w} (${row.winPercent}%)</span>`
     }
   },
   mounted() {
