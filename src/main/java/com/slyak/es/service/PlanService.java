@@ -37,4 +37,6 @@ public interface PlanService {
     void sellPlanItem(Long planId, long amount);
 
     SellStrategy getSellStrategy(Long planId);
+
+    void finishItem(Long id, Long amount);
 }

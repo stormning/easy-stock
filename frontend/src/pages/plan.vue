@@ -24,6 +24,11 @@
           width="100">
       </el-table-column>
       <el-table-column
+          prop="realAmount"
+          label="已购数量"
+          width="100">
+      </el-table-column>
+      <el-table-column
           prop="cost"
           label="计划金额">
       </el-table-column>
@@ -211,9 +216,21 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$http.post(`/api/plan/finishItem`, {'id':row.id}).then(res=>{
-          that.loadPlanItems()
-        })
+        this.$prompt('请输入数量', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          inputValue: row.amount - row.realAmount,
+          inputPattern: /^[1-9]+\d*00$/,
+          inputErrorMessage: '输入正确的股数'
+        }).then(({ value }) => {
+          this.$http.post(`/api/plan/finishItem`, {'id':row.id, 'amount': value}, {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }).then(res=>{
+            that.loadPlanItems()
+          })
+        }).catch(() => {});
       })
     },
     deleteItem(row) {

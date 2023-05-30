@@ -190,17 +190,25 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
     @Override
     @Transactional
     public void finishItem(Long id) {
+        finishItem(id, null);
+    }
+
+    @Override
+    public void finishItem(Long id, Long amount) {
         Optional<PlanItem> planItemOptional = planItemRepo.findById(id);
         if (planItemOptional.isPresent()) {
             PlanItem planItem = planItemOptional.get();
-            planItem.setStatus(PlanItemStatus.FINISH);
-            //TODO amount as an argument
-            //realAmount
-            planItem.setRealAmount(planItem.getAmount());
+            if (amount == null || amount <= 0) {
+                amount = planItem.getAmount();
+            }
+            long realAmount = Math.min(planItem.getRealAmount() + amount, planItem.getAmount());
+            planItem.setStatus(realAmount == planItem.getAmount()? PlanItemStatus.FINISH: PlanItemStatus.PART_FINISH);
+            planItem.setRealAmount(realAmount);
             savePlanItem(planItem);
             restPlanSummary(planItem.getPlanId());
         }
     }
+
 
     private void restPlanSummary(Long planId) {
         Plan plan = planRepo.getReferenceById(planId);

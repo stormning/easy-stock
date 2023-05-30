@@ -84,8 +84,8 @@ public class PlanApiController extends BaseController {
     }
 
     @PostMapping("/finishItem")
-    public Result finishItem(Long id) {
-        planService.finishItem(id);
+    public Result finishItem(Long id, Long amount) {
+        planService.finishItem(id, amount);
         return ok();
     }
 }

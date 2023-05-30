@@ -1,5 +1,6 @@
 package com.slyak.es.util;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
@@ -94,6 +95,23 @@ public class HttpUtil {
         return document.text();
     }
 
+
+    @SneakyThrows
+    public static String sendJsonPost(String url, Object body) {
+        String bodyString;
+        if (body instanceof  String){
+            bodyString = (String) body;
+        } else {
+            bodyString = JSON.toJSONString(body);
+        }
+        Connection.Response response = Jsoup.connect(url)
+                .ignoreContentType(true)
+                .method(Connection.Method.POST)
+                .requestBody(bodyString)
+                .execute();
+        return response.body();
+    }
+
     /**
      * 添加默认请求头
      *
@@ -104,6 +122,7 @@ public class HttpUtil {
             connection.header(entry.getKey(), entry.getValue());
         }
     }
+
 
     public static void main(String[] args) throws IOException {
         String s = HttpUtil.doGet("https://smartbox.gtimg.cn/s3/?v=2&q=hy&t=all&c=1", null);

@@ -138,6 +138,11 @@
             <version>3.6.1</version>
         </dependency>
 
+        <!--<dependency>
+            <groupId>com.github.tushare</groupId>
+            <artifactId>tushare4j</artifactId>
+            <version>0.4.6</version>
+        </dependency>-->
     </dependencies>
 
     <build>
