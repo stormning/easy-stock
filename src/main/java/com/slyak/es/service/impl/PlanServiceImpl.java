@@ -158,7 +158,7 @@ public class PlanServiceImpl implements PlanService, TaskCompletionHandler, Init
     }
 
     private PlanItem resetCost(PlanItem planItem) {
-        planItem.setCost(getCostWithFee(planItem.getAmount(), planItem.getPrice(), TradeType.BUY));
+        planItem.setCost(getCostWithFee(planItem.getRealAmount(), planItem.getPrice(), TradeType.BUY));
         return planItem;
     }
 
