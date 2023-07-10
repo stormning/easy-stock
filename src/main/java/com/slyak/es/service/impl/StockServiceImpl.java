@@ -52,9 +52,6 @@ public class StockServiceImpl implements StockService {
                 }
                 String[] split = StringUtils.split(stockProps[4], "-");
                 OrgType orgType = EnumUtils.getEnum(OrgType.class, split[0]);
-                if (orgType == null) {
-                    continue;
-                }
                 Market market = EnumUtils.getEnum(Market.class, stockProps[0]);
                 if (market == null) {
                     continue;
@@ -134,6 +131,7 @@ public class StockServiceImpl implements StockService {
 
     public static void main(String[] args) {
         StockServiceImpl ss = new StockServiceImpl(null);
+        System.out.println(ss.queryStocks("养殖"));
         System.out.println(ss.mgetStockInfos(Sets.newHashSet("sh600956")));
     }
 }
